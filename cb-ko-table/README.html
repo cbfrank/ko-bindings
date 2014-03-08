@@ -1,0 +1,185 @@
+<p>binding format<br />
+data-bind = "table: {<br />
+    source: <strong>*, //a collection that contains all the data items to be shown<br />
+    multiRowSelected: boolean, //a boolean indicate if support select multi rows, default is false<br />
+    selectMode: ko.bindingHandlers.table.selectMode.rowSelect or ko.bindingHandlers.table.selectMode.cellSelect, default is ko.bindingHandlers.table.selectMode.rowSelect<br />
+    onRowClick: *</strong> //a function, (event, dataItme) that will be called when user click on the tr element, the first element is the event object and the second object is the data item of this tr <br />
+    orders: observableArray, an array indicate the current ordered header, each element has two properties, {field: string, asc: bool}, field indicate order by which field, <br />
+             it's the value of the header attribute order-field (if not provided, then dataItemProperty will be used),<br />
+             asc: indicate if the order is asc or desc, when user click on any header to order, it will changed<br />
+}"</p>
+
+<p>table element has the attach data which is <br />
+{<br />
+    originalRows: <strong>*, //the original rows in the table body, these will be used as row template<br />
+    tableBindingData: *</strong> //the current binding data (not ko bindingContext)<br />
+    selectedItems: observable array, this is for tableSelectedItems binding, the table binding and tableSelectedItems binding share same attach data on the same table element<br />
+    relatedCRUDDatas: [] or undefined, all the crud attach data the targetTable of which is this table<br />
+}</p>
+
+<p>tr element has the attach data which is<br />
+{<br />
+    isSelected: <strong>*(boolean) // indicate if current row is selected or not<br />
+    dataItem: <em></strong> // is the data that is bound to this tr<br />
+    isFocus: *</em>* boolean<br />
+}</p>
+
+<p>for tr, there is a new binding isSelected which can bound the row selected status to the property of the viewModel<br />
+data-bind = "isSelected: <em>*</em>"</p>
+
+<p>for td, the attach data is:<br />
+{<br />
+     isSelected: boolean<br />
+     isFocus: boolean,<br />
+     isInlineEditing: boolean,<br />
+     inlineEditorDiv: the div that directly contains the inline editor<br />
+}</p>
+
+<p>for table crud panel<br />
+data-bind = "tableCRUD: {<br />
+    forTableSelector: which table, this crud panel is for, this is the selector sting of the table, if not present, the nearest table PARENT is used<br />
+    actionButtons: []// is a array of ko.bindingHandlers.tableCRUD.crudActionTypes, indicate which kind of buttons should be included, if undefined, then all button will be included<br />
+                    default is [ko.bindingHandlers.tableCRUDcrud.ActionTypes.add, ko.bindingHandlers.tableCRUDcrud.ActionTypes.change, ko.bindingHandlers.tableCRUD.crudActionTypes['delete']]<br />
+                    if the target table bind set editMode to ko.bindingHandlers.table.editMode.inline, then for the default, ko.bindingHandlers.tableCRUD.change is not included<br />
+    addBtnSelector/delBtnSelector/changeBtnSelector/saveBtnSelector: indicate which button is for which function<br />
+    addEditorSelector/delEditorSelector/changeEditorSelector: indicate which will be shown as modal when create a new item, please note, only the editor it content should be speficy, the tableCRUD will create OK and cancel button automatilly<br />
+    newItem: function(), a function will create a new data item<br />
+    saveFunc: ** the function will be called when user click save button, it should check all items status and save all changed items<br />
+    dataItemVerify: function(dataItem, action, editorContent, editorModalDialog, [dataItemProperty]):boolean, <br />
+                    the first param is the data item that currently editing<br />
+                    the second param is the current edit action (ko.bindingHandlers.tableCRUD.crudActionTypes.add/change/delete)<br />
+                    the third param is the jquery object for the editor content html element<br />
+                    the fourth param is the jquery modal dialog html element<br />
+                    the result is the verify result, it should be a boolean, if the result is false, the edite(add/change/del) will be cancel<br />
+                    the property of the dataItem that is editing, only when inline edit mode, and there is a attribute of dataItemProperty on the td in a tr template or th in the tr of thead<br />
+                    if dataItem and action is undefined, then it means should verify all the items<br />
+    copyDataItem: function(dataItem): copied data item. this fun is called when we change a data item, first , call it to get a temp data item,and bind it to the editor, then<br />
+                  user can edit the temp date item from editor, after user click ok button to confirm, we call assignDataItem to copy the data back to the origianl edit target<br />
+    assignDataItem: function(editedDataItem, targetDataItem) see above infromation<br />
+    saveImmediately: boolean // default is true, if this is true, once the edit method(add/change/del) is called, and user confirmed, the saveFunc will be called at once,<br />
+                             // if it is false, then the saveFunc will not be called, they just in the memory of client browser, and only user click save button on crud panel, the saveFunc will be called<br />
+    editMode: //ko.bindingHandlers.tableCRUD.editMode.modalPopup, ko.bindingHandlers.tableCRUD.editMode.inline<br />
+              //if is modalPopup, then there will be a modal dialog popup when user click change button<br />
+              //if is inline, then when user "type"/"click" on a cell the cell will be change to the corresponding editor, for default, there is no change button will be shown<br />
+              //default value is ko.bindingHandlers.tableCRUD.editMode.modalPopup<br />
+    newEditMode: //ko.bindingHandlers.tableCRUD.editMode.modalPopup, ko.bindingHandlers.tableCRUD.editMode.inline<br />
+              //if is modalPopup, then there will be a modal dialog popup when user click new button<br />
+              //if is inline, then when user create a new item, a new empty row is added, and user can "type"/"click" on a cell the cell of the new row will be change to the corresponding editor<br />
+              //default value is undefined<br />
+              //if it is undefined, then will use editMode value<br />
+    beforeShowEditor: function(action, modalContent, targetDataItem) //this function will be called before the editor is shown, <br />
+                //action: ko.bindingHandlers.tableCRUD.crudActionTypes.add, ko.bindingHandlers.tableCRUD.crudActionTypes.change or ko.bindingHandlers.tableCRUD.crudActionTypes['delete']<br />
+                //modalContent: is the editors container html node<br />
+                //targetDataItem: is the dataitem currently being edited<br />
+    prepareCRUDModal: function (action, modalRoot, modalContent, okBtn, cancelBtn, targetDataItem)<br />
+                //this function is just called after the  tableCreater.prepareCRUDModal is called<br />
+                //at this time, the crud modal is created and almost propared, it can be shown now, but we give a second chance to make some minior or any changes to the modal ui<br />
+                //use this if you have any special requires to the UI (please note, this function should be used for UI changeds at most time)<br />
+                //parameters:<br />
+                //action: ko.bindingHandlers.tableCRUD.crudActionTypes.add/ko.bindingHandlers.tableCRUD.crudActionTypes.change/ko.bindingHandlers.tableCRUD.crudActionTypes['delete']<br />
+                //modalRoot: the jquery object of the root element of the Modal<br />
+                //modalContent: the jquery object of the content element of the Modal (of course it is the children of the modalRoot and if addEditorSelector/delEditorSelector/changeEditorSelector provided, it is the clone of the element jquery object selected by these selector)<br />
+                //okBtn,cancelBtn<br />
+                //targetDataItem: although it has same properties values as the current edit data item, but actual it is the cpoied of the data item, but this targetDataItem is the actual one that is bound to Modal<br />
+}<br />
+the crud element (any html node that can have children nodes) has the attach data which is<br />
+{<br />
+    bindingData: <strong>* //the current binding data (not ko bindingContext),<br />
+    targetTable: <em></strong> //the table the crud panel is for<br />
+    bindingContext: <strong></em> // the binding context<br />
+    viewModel: *</strong> //the view model that the element is bound to<br />
+}<br />
+to use crud binding, you can custom the editor by the two ways:<br />
+1. create each field editor on the tr of header section of the table<br />
+2. create each field editor on the tr of the tboday of the table<br />
+for example:<br />
+<!--<br />
+<table id="vesselInstanceTable" data-bind="table: { source: oDataItems.items }"><br />
+    <thead><br />
+        <tr><br />
+            <th cellTemplate="InstanceNo" notEdit="notEdit" notAdd="notAdd" dataItemProperty="InstanceNo" order-field="InstanceNo"><br />
+                <div>#</div><br />
+            </th><br />
+            <th cellTemplate="Name" dataItemProperty="Name" order-field="Name"<br />
+                editortemplate="HTML: (-|input type='text' data-bind='{value:Name}' class='validate[required]' /|-)"><br />
+                <div>The Name</div><br />
+            </th><br />
+            <th cellTemplate="IMO" notEdit="READONLY" notOrder="notOrder"<br />
+                editortemplate="HTML: (-|input type='text' data-bind='{value:IMO}' class='validate[required,custom[imo]]' /|-)"><br />
+                <div>IMO</div><br />
+            </th><br />
+            <th cellTemplate="BIND: format:{value:StartDate,formatStr:'@Context.CurrentGlobalFormat().ShortDateFormat',dateType:ko.bindingHandlers.format.dataTypes.dateTime}"<br />
+                    notEdit="READONLY"<br />
+                    editorLabel="@VesselInstanceRes.StartColHeader (@Context.CurrentGlobalFormat().ShortDateFormat.ToUpper())"<br />
+                    editorTemplate="HTML: (-|input type='text' data-date-format='@globalFormat.ShortDateFormat' data-bind='datetimepicker:{datetime:StartDate}' class='validate[required,custom[cultureDate[@Context.CurrentGlobalFormat().ShortDateFormat]],custom[cultureDateFuture[@Context.CurrentGlobalFormat().ShortDateFormat,2010-01-01]]]' /|-)"><br />
+                    editorFinishEvent="blur"<br />
+                    editorFinish="some code to trigger the finish edit"<br />
+                <div>Start Date</div><br />
+            </th><br />
+        </tr><br />
+    </thead><br />
+<table><br />
+or<br />
+<table id="vesselInstanceTable" data-bind="table: { source: oDataItems.items }"><br />
+    <thead><br />
+    ...<br />
+    </thead><br />
+    <tbody><br />
+        <tr><br />
+            <td data-bind="text:Name" dataItemProperty="Name" order-field="Name"/><br />
+            <td cellTemplate="InstanceNo" notEdit="notEdit" notAdd="notAdd"/><br />
+            <td cellTemplate="Name" editortemplate="HTML: (-|input type='text' data-bind='{value:Name}' class='validate[required]' /|-)"<br />
+                editorFinishEvent="blur"<br />
+                editorFinish="some code to trigger the finish edit"/><br />
+        </tr><br />
+    </tbody><br />
+<table><br />
+--><br />
+Explain:<br />
+you can add addition attributes on both td or th<br />
+The additional attributes can be:<br />
+  cellTemplate: it can be plain text (means display the property of data item as string), a string which starts with "BIND: "(means the cell display as an td with the data-bind)<br />
+                or a string with "HTML: " (the cell is represent by the html), see function tableCreater.createCellTemplate<br />
+  notEdit notAdd notEdit="READONLY" or notAdd="READONLY":<br />
+                //notAdd="notAdd" means is not visible for add, and ofcourse is readonly<br />
+                //notAdd="READONLY" means is shown on add, but is readonly<br />
+                //notEdit="notEdit" means is not visible for change, and ofcourse is readonly<br />
+                //notEdit="READONLY" means is shown on change, but is readonly<br />
+                see function tableCreater.isColEditableShown and tableCreater.isColReadOnly<br />
+  editorTemplate: if provide, then use it as the editor when add or change a data item, otherwise use cellTemplate as the editor, the value of it is used in the same way as cellTemplate<br />
+  editorLabel: if proviedd, use it as the label before the editor, otherwise use the col header<br />
+  dataItemProperty: a plain text which is the name of the property of the data item. it is only used in inline model, in inline, when user change a cell, the bound item property will be changed also<br />
+                 becasue of the bound, but for the situation that the dataItemVerify is not pass, we need to revert user changes, so before user change, we copied the data item<br />
+                 and when dataItemVerify fail, we copy the property (specified by dataItemProperty) of the copied data item back to the data item. <br />
+                 if this is not provied, the code will copy every properties of the copied data item to the data item<br />
+  editorFinishEvent: if not provided, then blur will be used, that is to say, when the editor lost focus, the cell will finish the edit, it can be any event name, for example: click and so on<br />
+  editorFinish: if provide, the every time, the editor is created, this code will be used to register the event, used can write code to check if should end cell edit,<br />
+                for example, <br />
+                  if($currentCell.index() == 5){<br />
+                    $editor.blur(function(){<br />
+                      $endEdit();<br />
+                    })<br />
+                  };<br />
+  order-field: indicate when user click on this header column, which field name should be used to order, when user click on the header, a new item {field: order-field value, ase: true or false}<br />
+                will be added to the table binding orders array<br />
+  notOrder: normally, if the column provide order-field or dataItemProperty, then it will be able ordered by default, in case user provide dataItemProperty and not want it order able, then add notOrder="notOrder" to disable order function for this column<br />
+            if notOrder="notOrder" is added to table, then the whole order function will be disabled</p>
+
+<p>for table paging binding<br />
+data-bind="tablePaging:{<br />
+  pageInfoContainerSelector:<br />
+  pageNavigateContainerSelector:<br />
+  totalCount: total record items count<br />
+  onePageItemsCount: record itmes count on one page<br />
+  currentPageIndex: int<br />
+  fetchUrl:  the url will passed to fetchItems function, if it is not provied, then the pageIndex will be the first param to the fetchItems function<br />
+  fetchItems: the function(fetchUrl, pageIndex, fetchFinishedCallback) that update the items, when user click on any page index, this function will be called, the first and last params is not required<br />
+}"</p>
+
+<p>the page element has the following attachdata<br />
+{<br />
+    bindingData: <em>*</em> //the current binding data (not ko bindingContext),   <br />
+}</p>
+
+<p>data-bind= tableSelectedItems :// items (array or observableArray)in the source, which is bound for the current selected rows<br />
+the table binding and tableSelectedItems binding share same attach data on the same table element</p>
