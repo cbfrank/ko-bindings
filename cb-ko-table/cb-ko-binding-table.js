@@ -1313,7 +1313,7 @@ var tableCreater = {};
                             //for IE8 when edit a cell with a complex component (for example, the editor is chosen, datetime picker and so on)
                             //although we have set the right cell with focus, but when the editor is removed, the cell will lost focus in IE 8
                             //so for ie 8, we set a time trigger to set that cell again
-                            if (ko.utils.ieVersion <= 8 || (bowser && bowser.msie && bowser.version <= 8)) {
+                            if (ko.utils.ieVersion <= 8 || (typeof (bowser) !== "undefined" && bowser.msie && bowser.version <= 8)) {
                                 setTimeout(function () {
                                     _.CellMouseManager.updateSelectFocus(undefined, tableBindingData.selectMode, tableBindingData.multiRowSelected, table, nextCell);
                                 }, 200);
