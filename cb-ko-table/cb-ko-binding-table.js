@@ -2142,6 +2142,9 @@ tableCreater = $.extend(tableCreater, {
 
     createCRUDModal: function (modalContent, attachedData, targetDataItem, action) {
         var root = $("<div>").addClass("modal hide fade in").attr("aria-hidden", true).hide();
+        var content = $('<div class="modal-dialog"><div class="modal-content"></div></div>');
+        root.append(content);
+        content = content.children("div");
         var html;
         //'<div class="black-box modal hide fade in" aria-hidden="true" style="display: none;">' +
         //'  <div class="modal-header tab-header">                                                            ' +
@@ -2165,9 +2168,9 @@ tableCreater = $.extend(tableCreater, {
                 root.modal('hide');
             }));
         html.append($("<span/>"));
-        root.append(html);
+        content.append(html);
 
-        root.append($("<div/>").addClass("modal-body separator").append($(modalContent)));
+        content.append($("<div/>").addClass("modal-body separator").append($(modalContent)));
         html = $("<div/>").addClass("modal-footer");
 
         var cancelBtn = $("<button/>").addClass("btn btn-small ")/*.attr("data-dismiss", "modal")*/.html(tableResource.Cancel);
@@ -2175,7 +2178,7 @@ tableCreater = $.extend(tableCreater, {
         //ok button
         var okBtn = $("<button/>").addClass("btn btn-small btn-primary")/*.attr("data-dismiss", "modal")*/.html(tableResource.Ok);
         html.append(okBtn);
-        root.append(html);
+        content.append(html);
         //modalContent.show();
         return { root: root, cancelBtn: cancelBtn, okBtn: okBtn };
     },
