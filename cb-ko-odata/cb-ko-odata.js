@@ -476,7 +476,7 @@ var ODataCollection = function (option) {
             return $.ajax(ajaxOpt);
         };
 
-        self.refineFetchUrl = function(baseFetchUrl) {
+        self.refineFetchUrl = function (baseFetchUrl) {
             if (self.filter()) {
                 baseFetchUrl = combineUrlWithParam(baseFetchUrl, "$filter=" + self.filter());
             }
@@ -720,7 +720,7 @@ ODataCollection.invokeWebApi = function (httpMethod, url, dataItem, completeCall
         data: dataItem,
         url: url,
         complete: function (jqXHR, textStatus) {
-            if (ODataCollection.validateHttpResponse && ODataCollection.validateHttpResponse(ODataCollection.actions.api, undefined, textStatus, jqXHR)) {
+            if (ODataCollection.validateHttpResponse && !ODataCollection.validateHttpResponse(ODataCollection.actions.api, undefined, textStatus, jqXHR)) {
                 textStatus = "error";
             }
             if (completeCallback) completeCallback(jqXHR, textStatus);
