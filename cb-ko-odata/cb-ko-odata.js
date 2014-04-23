@@ -62,11 +62,11 @@ var ODataCollection = function (option) {
         option.itemsCountOnePage = ODataCollection.defaultItemsCountOnePage;
     }
 
-    function notify(type, title, message, autoHide, modal) {
+    function notify(type, title, message, autoHide, modal, jqXHR) {
         if (option.notify) {
-            option.notify(type, title, message, autoHide, modal);
+            option.notify(type, title, message, autoHide, modal, jqXHR);
         } else if (ODataCollection.notify) {
-            ODataCollection.notify(type, title, message, autoHide, modal)
+            ODataCollection.notify(type, title, message, autoHide, modal, jqXHR)
         } else {
 
         }
@@ -224,7 +224,7 @@ var ODataCollection = function (option) {
             ajaxOpt.headers = option.httpHeaders;
         }
         return $.ajax(ajaxOpt).fail(function (jqXHR, textStatus, errorThrown) {
-            notify('error', undefined, oDataModelResource.AddError + errorThrown);
+            notify('error', undefined, oDataModelResource.AddError + errorThrown, undefined, undefined, jqXHR);
         });
     };
 
@@ -239,7 +239,7 @@ var ODataCollection = function (option) {
             ajaxOpt.headers = option.httpHeaders;
         }
         return $.ajax(ajaxOpt).fail(function (jqXHR, textStatus, errorThrown) {
-            notify('error', undefined, oDataModelResource.ChangeError + errorThrown);
+            notify('error', undefined, oDataModelResource.ChangeError + errorThrown, undefined, undefined, jqXHR);
         });
     };
 
@@ -254,7 +254,7 @@ var ODataCollection = function (option) {
             ajaxOpt.headers = option.httpHeaders;
         }
         return $.ajax(ajaxOpt).fail(function (jqXHR, textStatus, errorThrown) {
-            notify('error', undefined, oDataModelResource.DeleteError + errorThrown);
+            notify('error', undefined, oDataModelResource.DeleteError + errorThrown, undefined, undefined, jqXHR);
         });
     };
 
