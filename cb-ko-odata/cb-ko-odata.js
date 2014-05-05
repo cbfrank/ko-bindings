@@ -13,7 +13,7 @@
 //  dateProperties: 
 //     if is the array of string, then it is the array of all the properites that should be of the type date, and if the date string is generic, then they should be parsed as Utc (if the date string is specified with Z or timezone, then it will be parsed exactly)
 //     if is the array of object, then each object should be {name:****, asUtc:true/false}, the name is the property name, the asUtc means the generic time string should be parsed as Utc time or local time (if the date string is specified with Z or timezone, then it will be parsed exactly)
-//  onBeginFetch: function() will be called when before the fetch start
+//  onBeginFetch: function(continueCallback(bool)) will be called when before the fetch start, a continueCallback must be passed and continueCallback will be provided a bool indicate should be continue
 //  onEndFetchPreProcessItems:   function(bool, oDataCollection, fetchedItemsArray, processFinishedCallback) 
 //                will be called after the fetch is finished, user can override this method to provide a pre process function before these items save to items observable array, 
 //                the firt param is diticate if the fetch is successful or not, 
@@ -526,7 +526,9 @@ var ODataCollection = function (option) {
                 option.onAsyncActionBegin("FETCH");
             }
             if (option.onBeginFetch) {
-                option.onBeginFetch();
+                option.onBeginFetch.call(self, beginFetchCallback);
+            } else {
+                beginFetchCallback(true);
             }
 
             function finalNoAsyncProcess() {
@@ -538,14 +540,20 @@ var ODataCollection = function (option) {
                 }
             }
 
-            function finalPrcoess(success, originalFetchedItems) {
-                if (originalFetchedItems) {
+            function finalPrcoess(success, originalFetchedItems, needParseDateProps, needEndFetchPreProcessItems) {
+                if (typeof (needParseDateProps) === "undefined") {
+                    needParseDateProps = true;
+                }
+                if (typeof (needEndFetchPreProcessItems) === "undefined") {
+                    needEndFetchPreProcessItems = true;
+                }
+                if (originalFetchedItems && needParseDateProps) {
                     for (var i = 0; i < originalFetchedItems.length; i++) {
                         parseDateProps(originalFetchedItems[i], option.dateProperties);
                     }
                 }
 
-                if (option.onEndFetchPreProcessItems) {
+                if (needEndFetchPreProcessItems && option.onEndFetchPreProcessItems) {
                     option.onEndFetchPreProcessItems(success, self, originalFetchedItems, function (processedItems) {
                         if (!$.isArray(processedItems) && typeof (processedItems) != "undefined") {
                             throw "processedItems should be array or undefined";
@@ -562,33 +570,40 @@ var ODataCollection = function (option) {
                 }
             }
 
-            if (typeof (pageIndex) === "undefined") {
-                pageIndex = self.currentPageIndex();
-            }
-
-            if (self.itemsCountOnePage() > 0 && pageIndex >= self.pagesCount()) {
-                finalPrcoess(true, []);
-                return undefined;
-            }
-            self.currentPageIndex(pageIndex);
-            var url = fetchUrl;
-            //only when self.itemsCountOnePage()>0, then we do page
-            if (self.itemsCountOnePage() > 0) {
-                url = combineUrlWithParam(url, "$skip=" + (self.currentPageIndex() < 0 ? 0 : self.currentPageIndex() * self.itemsCountOnePage()));
-                url = combineUrlWithParam(url, "$top=" + self.itemsCountOnePage());
-            }
-
-            return self.doFetch(url).always(function (data, textStatus, jqXHR) {
-                if (validateResponse(ODataCollection.actions.fetch, data, textStatus, jqXHR) && textStatus === "success") {
-                    var actualData = data.value;
-                    if (option.fetchGetValueFunc) {
-                        actualData = option.fetchGetValueFunc(data, textStatus, jqXHR);
+            function beginFetchCallback(shouldContinue) {
+                if (shouldContinue) {
+                    if (typeof (pageIndex) === "undefined") {
+                        pageIndex = self.currentPageIndex();
                     }
-                    finalPrcoess(true, actualData);
+
+                    if (self.itemsCountOnePage() > 0 && pageIndex >= self.pagesCount()) {
+                        finalPrcoess(true, [], true, true);
+                        return undefined;
+                    }
+                    self.currentPageIndex(pageIndex);
+                    var url = fetchUrl;
+                    //only when self.itemsCountOnePage()>0, then we do page
+                    if (self.itemsCountOnePage() > 0) {
+                        url = combineUrlWithParam(url, "$skip=" + (self.currentPageIndex() < 0 ? 0 : self.currentPageIndex() * self.itemsCountOnePage()));
+                        url = combineUrlWithParam(url, "$top=" + self.itemsCountOnePage());
+                    }
+
+                    return self.doFetch(url).always(function (data, textStatus, jqXHR) {
+                        if (validateResponse(ODataCollection.actions.fetch, data, textStatus, jqXHR) && textStatus === "success") {
+                            var actualData = data.value;
+                            if (option.fetchGetValueFunc) {
+                                actualData = option.fetchGetValueFunc(data, textStatus, jqXHR);
+                            }
+                            finalPrcoess(true, actualData, true, true);
+                        } else {
+                            finalPrcoess(false, [], true, true);
+                        }
+                    });
                 } else {
-                    finalPrcoess(false, []);
+                    finalPrcoess(true, self.items(), false, false);
+                    return undefined;
                 }
-            });
+            }
         };
 
         self.doUpdatePagesCount = function (updatePagesCountUrl) {
