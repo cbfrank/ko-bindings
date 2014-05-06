@@ -415,8 +415,10 @@ var ODataCollection = function (option) {
                             //crud.modelStatus(dataItem, delTag, true);
                             dataItem.delTag = delTag;
                         } else {
-                            crud.modelStatus(dataItem, crud.modelStatusConsts.Normal);
+
                         }
+                        //must set deleted item status to normal to indicated it is successfully processed
+                        crud.modelStatus(dataItem, crud.modelStatusConsts.Normal);
                     });
                     jqAjax.always(function (data, textStatus, jqXHR) {
                         if (!validateResponse(action, data, textStatus, jqXHR)) {
