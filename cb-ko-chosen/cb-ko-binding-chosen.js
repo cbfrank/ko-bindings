@@ -3,10 +3,18 @@ binding format
 data-bind = "table: {
     chosenOption: *** or {***} //the option passed to chosen function when create the chosen
     source: ***, //source items
-    valueProp: *** //the property of the items in source that will be used as the value of the option
+    valueProp: *** //the property (string, or expression string) of the items in source or a function that will be used as the value of the option, if undefined, then the item it self will be used as the value of the option
+                   //then the value will be add into selectedValue (array) or set to selectedValue when the option is selected
+    valuePropertyForMatch: *** //the property (string, or expression string) of the items in source or a function that will be used to compare with the selectedValue.selectedValueItemProp or selectedValue[i].selectedValueItemProp
+                            //to determin if an option should be shown as selected or not
     selectedValue: *** //the value that user is selected, it can be array
     selectedValueItemProp: the prop of the items in selectedValue array, that will be used to match the value in source
     displayProp: the property of the items in source that will be used as the text of the option, it also can be a valid expression, the "this" is current item, and we can also use $parent, $parents, $data and $root
+    isOptionGroup: the property name (string) or an string of expression or a function(item) that return boolean to determin if a item in the source is a normal option or the group of the options, 
+        default is undefine, means not group, if is string, then if the item in the source has the property specified by string, then will use it, if not, then will take the string as an expression,
+        if is a function, then will just call it, the property/expression/function should be of boolean
+    groupName: the property name (string) or expression (string) or function(item) that will be shown as the group name
+    groupItems: the property name (string) or expression (string) or function(item) that return an array or observableArray of all the itmes in the group
 }"
 */
 (function () {
@@ -43,24 +51,20 @@ data-bind = "table: {
             }
 
             chosen.change(function (event, data) {
-                _.CO.updateValue(value, $(element).val(), element, allBindingsAccessor);
+                _.CO.updateValue(value, $(element).val(), element, allBindingsAccessor, bindingContext, viewModel);
                 //if (ko.isObservable(value.selectedValue)) {
                 //    value.selectedValue(data.selected);
                 //} else {
                 //    throw 'selectedValue must be bound to an observable field';
                 //    //we throw this exception is becasue ,value is the binding value, will will copy from the specified property of viewModel
-                //    //and if it is not a observable, then just value copy, which will not change the copied property of viewMode
+                //    //and if it is not a observable, then just value copy, which will not change the copied property of viewModel
                 //    //value.selectedValue = data.selected;
                 //}
             });
         },
 
         //set the bound view model property value to the selected value
-        updateValue: function (databoundValue, selectedOptionValue, element, allBindingsAccessor) {
-            //the value of option is alwasy the index so we must convet it to the corresponding data item
-            if ($.isArray(selectedOptionValue) && databoundValue.selectedValueItemProp) {
-                throw "Not supported yet";
-            }
+        updateValue: function (databoundValue, selectedOptionValue, element, allBindingsAccessor, bindingContext, viewModel) {
             var selectedOptionValueArray = [];
             if ($.isArray(selectedOptionValue)) {
                 selectedOptionValueArray = selectedOptionValue;
@@ -73,11 +77,8 @@ data-bind = "table: {
                 if (typeof (selectedOptionValueArray[i]) === "undefined" || selectedOptionValueArray[i] == null) {
                     continue;
                 }
-                var optionValue = $(element).children("[value=" + selectedOptionValueArray[i] + "]").data("item");
-
-                if (typeof (_.UO(databoundValue.valueProp)) !== "undefined") {
-                    optionValue = _.UO(optionValue[_.UO(databoundValue.valueProp)]);
-                }
+                var optionValue = $(element).find("[value=" + selectedOptionValueArray[i] + "]").data("item");
+                optionValue = _.CO.tryGetValueOf(element, bindingContext, viewModel, optionValue, databoundValue.valueProp, true);
                 tmpSetValueArray.push(optionValue);
             }
 
@@ -102,7 +103,7 @@ data-bind = "table: {
             } else {
                 throw 'selectedValue must be bound to an observable field';
                 //we throw this exception is becasue ,value is the binding value, will will copy from the specified property of viewModel
-                //and if it is not a observable, then just value copy, which will not change the copied property of viewMode
+                //and if it is not a observable, then just value copy, which will not change the copied property of viewModel
                 //databoundValue.selectedValue = selectedOptionValue;
             }
         },
@@ -112,9 +113,53 @@ data-bind = "table: {
 
             //for the case, if the selected value is not any option, but the chose is set to single select mode, then it will select the frist value, but won't trigger change event
             //so we force the value are always same between the element and the viewmodel
-            _.CO.updateValue(valueAccessor(), $(element).val(), element, allBindingsAccessor);
+            _.CO.updateValue(valueAccessor(), $(element).val(), element, allBindingsAccessor, bindingContext, viewModel);
 
             $(element).trigger("chosen:updated");
+        },
+
+        //1. if propOrExpOrFunc is string, then try get value as it is the property name
+        //2. try take propOrExpOrFunc as a expression and build it and resolve
+        //3. if propOrExpOrFunc is not a string, take it as function and call
+        tryGetValueOf: function (element, bindingContext, viewModel, target, propOrExpOrFunc, returnTargetIfUndefine) {
+            element = $(element);
+            function evaluateExpression(expStr, theItem) {
+                theItem = _.UO(theItem);
+                var func;
+                //we cache the expression function so that we can reuse it next time
+                //so we first check if the expression is cached
+                if (element[0][expStr]) {
+                    func = element[0][expStr];
+                } else {
+                    var funcBody = "with ($bindingContext){with($bindingContextOverride) {with ($currentItem) {return " + expStr + ";}}}"
+                    element[0][expStr] = func = new Function("$bindingContext", "$currentItem", "$bindingContextOverride", funcBody);
+                }
+                var bindingContextOverride = {
+                    $parents: bindingContext.$parents.slice(0),
+                    $data: theItem,
+                    $parent: viewModel
+                };
+                bindingContextOverride.$parents.splice(0, 0, viewModel);
+                return func(bindingContext, theItem, bindingContextOverride);
+            }
+
+            target = _.UO(target);
+            propOrExpOrFunc = _.UO(propOrExpOrFunc);
+            if (typeof (propOrExpOrFunc) === "undefined") {
+                if (returnTargetIfUndefine) {
+                    return target;
+                }
+                return undefined;
+            }
+            if (typeof (propOrExpOrFunc) === "string") {
+                if (typeof (target[propOrExpOrFunc]) === "undefined") {
+                    return evaluateExpression(propOrExpOrFunc, target);
+                } else {
+                    return _.UO(target[propOrExpOrFunc]);
+                }
+            } else {
+                return propOrExpOrFunc.call(viewModel, target);
+            }
         },
 
         updateSelect: function (element, bindData, bindingContext, viewModel) {
@@ -125,7 +170,6 @@ data-bind = "table: {
             if (typeof (source) === "undefined" || source == null) {
                 source = [];
             }
-            var valueProp = _.UO(value.valueProp);
             var selectedValue = _.UO(value.selectedValue);
             var displayProp = _.UO(value.displayProp);
             var selectedValueItemProp = _.UO(value.selectedValueItemProp);
@@ -136,62 +180,54 @@ data-bind = "table: {
             } else {
                 selectedValueArray.push(selectedValue);
             }
+            var valuePropertyForMatch = value.valuePropertyForMatch;
+            if (typeof (valuePropertyForMatch) == "undefined" && typeof (selectedValueItemProp) == "undefined") {
+                valuePropertyForMatch = value.valueProp;
+            }
 
             function inArray(array, arrayItemProp, searchValue) {
                 for (var j = 0; j < array.length; j++) {
-                    var item = array[j];
-                    if (arrayItemProp) {
-                        item = item[arrayItemProp];
-                    }
-                    if (item == searchValue) {
+                    if (_.CO.tryGetValueOf(element, bindingContext, viewModel, array[j], arrayItemProp, true) == searchValue) {
                         return true;
                     }
                 }
                 return false;
             }
 
+            var optionNo = 0;
 
-            for (var i = 0; i < source.length; i++) {
-                var sourceItemValue = _.UO(source[i]);
-                if (valueProp) {
-                    sourceItemValue = _.UO(source[i][valueProp]);
+            function createOptions(parentElement, items) {
+                parentElement = $(parentElement);
+                items = _.UO(items);
+                if (typeof (items) === "undefined") {
+                    return;
                 }
-
-                var displayValue = _.UO(source[i]);
-                if (displayProp) {
-                    if ((displayProp in displayValue)) {
-                        displayValue = _.UO(displayValue[displayProp]);
-                    } else {
-                        displayValue = (function () {
-                            var func;
-                            if (element[0][displayProp]) {
-                                func = element[0][displayProp];
-                            } else {
-                                var funcBody = "with ($bindingContext){with($bindingContextOverride) {with ($currentItem) {return " + displayProp + ";}}}"
-                                element[0][displayProp] = func = new Function("$bindingContext", "$currentItem", "$bindingContextOverride", funcBody);
-                            }
-                            var bindingContextOverride = {
-                                $parents: bindingContext.$parents.slice(0),
-                                $data: displayValue,
-                                $parent: viewModel
-                            };
-                            bindingContextOverride.$parents.splice(0, 0, viewModel);
-                            return func(bindingContext, displayValue, bindingContextOverride);
-                        })();
+                for (var i = 0; i < items.length; i++) {
+                    var item = items[i];
+                    var isGroup = false;
+                    var opt;
+                    if (value.isOptionGroup) {
+                        isGroup = _.CO.tryGetValueOf(element, bindingContext, viewModel, item, value.isOptionGroup, false);
                     }
-                } else { //if displayProp is empty, it means directly show the current item
-
+                    if (isGroup) {
+                        opt = $('<optgroup label="' + _.CO.tryGetValueOf(element, bindingContext, viewModel, item, value.groupName, true) + '" />');
+                        parentElement.append(opt);
+                        createOptions(opt, _.CO.tryGetValueOf(element, bindingContext, viewModel, item, value.groupItems, true));
+                    } else {
+                        var displayValue = _.CO.tryGetValueOf(element, bindingContext, viewModel, item, displayProp, true);
+                        if (inArray(selectedValueArray, selectedValueItemProp, _.CO.tryGetValueOf(element, bindingContext, viewModel, item, valuePropertyForMatch, true))) {
+                            opt = $('<option selected="selected" value="' + optionNo + '">' + displayValue + '</option>');
+                        } else {
+                            opt = $('<option value="' + optionNo + '">' + displayValue + '</option>');
+                        }
+                        opt.data("item", _.UO(item));
+                        parentElement.append(opt);
+                        optionNo++;
+                    }
                 }
-                var opt;
-
-                if (inArray(selectedValueArray, selectedValueItemProp, sourceItemValue)) {
-                    opt = $('<option selected="selected" value="' + i + '">' + displayValue + '</option>');
-                } else {
-                    opt = $('<option value="' + i + '">' + displayValue + '</option>');
-                }
-                opt.data("item", _.UO(source[i]));
-                element.append(opt);
             }
+
+            createOptions(element, source);
         }
     };
 
