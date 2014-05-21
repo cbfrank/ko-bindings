@@ -294,6 +294,7 @@ var ODataCollection = function (option) {
 
         self.filter = ko.observable();
         self.orderby = ko.observable();
+        self.expand = ko.observable();
 
         self.items = ko.observableArray();
 
@@ -484,6 +485,9 @@ var ODataCollection = function (option) {
             }
             if (self.orderby()) {
                 baseFetchUrl = combineUrlWithParam(baseFetchUrl, "$orderby=" + self.orderby());
+            }
+            if (self.expand()) {
+                baseFetchUrl = combineUrlWithParam(baseFetchUrl, "$expand=" + self.expand());
             }
             return baseFetchUrl;
         };
