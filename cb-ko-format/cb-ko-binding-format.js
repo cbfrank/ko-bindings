@@ -205,7 +205,7 @@ format:{
                     //so for IE8, we finally empty the cell, but empty cell on IE8 won't trigger the blur event of the children of the cell
                     //but inline edit depends on this event
                     //so manually trigger this evnet
-                    if (ko.$helper.browser.isIE && ko.$helper.browser.version <= 8) {
+                    if (ko.$helper && ko.$helper.browser && ko.$helper.browser.isIE && ko.$helper.browser.version <= 8) {
                         if (element.children().length > 0) {
                             element.children().blur();
                         }
