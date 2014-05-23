@@ -251,10 +251,14 @@ useage:
                             triggerReason === ko.bindingHandlers.datetimepicker.triggerBlurForKODatetimePickerUpdate) {
                             return;
                         }
-                        if (!_.isPickerShown($editor)) {
-                            input.trigger("blur", ko.bindingHandlers.datetimepicker.triggerBlurForKODatetimePickerUpdate);
-                            $endEdit();
-                        }
+                        //in some case, the blur of input is triggered before the picker show event, this will case the picker can't be shown
+                        //so we wait for 100 ms then check
+                        setTimeout(function () {
+                            if (!_.isPickerShown($editor)) {
+                                input.trigger("blur", ko.bindingHandlers.datetimepicker.triggerBlurForKODatetimePickerUpdate);
+                                $endEdit();
+                            }
+                        }, 100);
                     };
                     //we bind this handler only for the case that if the picker is not set to be popuped automaticlly
                     $editor.blur(data.blurHandler);
