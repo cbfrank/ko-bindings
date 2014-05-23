@@ -68,8 +68,8 @@ format:{
                     if (event.eventPhase != 2) {
                         return;
                     }
-                } else { //for IE8, event.eventPhase is undefined, so wo compare it with current element
-                    if (event.currentTarget != element[0]) {
+                } else { //event.eventPhase is undefined (for IE8 or some unknown case), so wo compare it with current element
+                    if (event.currentTarget !== element[0] || event.target !== element[0]) {
                         return;
                     }
                 }
