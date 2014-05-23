@@ -19,7 +19,9 @@
 //                the firt param is diticate if the fetch is successful or not, 
 //                the second param is the oDataCollection it self
 //                the third param is the fetched items array
-//                the forth param is the callback (function(processedItems)) when all the process is finihsed, the processedItems is the array that contains all processed items
+//                the forth param is the callback (function(processedItems, bool)) when all the process is finihsed, 
+//                          the processedItems is the array that contains all processed items, 
+//                          the second bool param means when convert the josn object to object of observable property, replace it self or create a new object, default is false, means create a new object
 //  onAsyncActionBegin:, onAsyncActionEnd: function (action), when there is an async action started, the begin method will be called, and after the async method is end, the end method will be called
 //                      normally, the tow methods are the place to show waiting dialog and so on, the action parameter is the action method name, it can be FETCH, SAVE, UPADTEPAGESCOUNT
 //  itemsCountOnePage: the items count of one page, 0 get all items, if not provided, then use ODataCollection.defaultItemsCountOnePage as the default value
@@ -258,13 +260,13 @@ var ODataCollection = function (option) {
         });
     };
 
-    function updateObservableArrayOfKOVMWithJsonObj(observableArray, jsonObjectsArray) {
+    function updateObservableArrayOfKOVMWithJsonObj(observableArray, jsonObjectsArray, replaceWithObservableOnSameObject) {
         if (!jsonObjectsArray) {
             jsonObjectsArray = [];
         }
 
         for (var i = 0; i < jsonObjectsArray.length; i++) {
-            jsonObjectsArray[i] = jsonObjectToKoViewModel(jsonObjectsArray[i]);
+            jsonObjectsArray[i] = jsonObjectToKoViewModel(jsonObjectsArray[i], replaceWithObservableOnSameObject);
         }
 
         observableArray(jsonObjectsArray);
@@ -560,14 +562,17 @@ var ODataCollection = function (option) {
                 }
 
                 if (needEndFetchPreProcessItems && option.onEndFetchPreProcessItems) {
-                    option.onEndFetchPreProcessItems(success, self, originalFetchedItems, function (processedItems) {
+                    option.onEndFetchPreProcessItems(success, self, originalFetchedItems, function (processedItems, replaceWithObservableOnSameObject) {
                         if (!$.isArray(processedItems) && typeof (processedItems) != "undefined") {
                             throw "processedItems should be array or undefined";
                         }
                         if (!processedItems) {
                             processedItems = originalFetchedItems;
                         }
-                        updateObservableArrayOfKOVMWithJsonObj(self.items, processedItems);
+                        if (typeof (replaceWithObservableOnSameObject) === "undefined") {
+                            replaceWithObservableOnSameObject = false;
+                        }
+                        updateObservableArrayOfKOVMWithJsonObj(self.items, processedItems, replaceWithObservableOnSameObject);
                         finalNoAsyncProcess();
                     });
                 } else {
