@@ -1,4 +1,4 @@
-<p>binding format<br />
+﻿<p>binding format<br />
 data-bind = "table: {<br />
     source: <strong>*, //a collection that contains all the data items to be shown<br />
     multiRowSelected: boolean, //a boolean indicate if support select multi rows, default is false<br />
@@ -134,6 +134,27 @@ or<br />
         </tr><br />
     </tbody><br />
 <table><br />
+or<br />
+<table id="vesselInstanceTable" data-bind="table: { source: oDataItems.items }"><br />
+    <thead><br />
+    ...<br />
+    </thead><br />
+    <tbody><br />
+        <tr><br />
+            <td data-bind="text:Name" dataItemProperty="Name" order-field="Name"/><br />
+            <td cellTemplate="InstanceNo" notEdit="notEdit" notAdd="notAdd"/><br />
+            <td cellTemplate="Name"<br />
+                editorFinishEvent="blur"<br />
+                editorFinish="some code to trigger the finish edit"><br />
+                <templates><br />
+                    <editor><br />
+                        <input type="text" data-bind='{value:Name}' class='validate[required]'/><br />
+                    </editor><br />
+                </templates><br />
+            </td><br />
+        </tr><br />
+    </tbody><br />
+<table><br />
 --><br />
 Explain:<br />
 you can add addition attributes on both td or th<br />
@@ -163,7 +184,18 @@ The additional attributes can be:<br />
   order-field: indicate when user click on this header column, which field name should be used to order, when user click on the header, a new item {field: order-field value, ase: true or false}<br />
                 will be added to the table binding orders array<br />
   notOrder: normally, if the column provide order-field or dataItemProperty, then it will be able ordered by default, in case user provide dataItemProperty and not want it order able, then add notOrder="notOrder" to disable order function for this column<br />
-            if notOrder="notOrder" is added to table, then the whole order function will be disabled</p>
+            if notOrder="notOrder" is added to table, then the whole order function will be disabled<br />
+for the td, it can have children of templates, for example:<br />
+<!--<br />
+    <templates><br />
+        <editor><br />
+            <input type="text" data-bind='{value:Name}' class='validate[required]'/><br />
+        </editor><br />
+    </templates><br />
+--><br />
+there are two kinds of nodes can be defined in templates<br />
+    editor: this is the html definition of the editor when user try to edit (add or change) this cell, if not provided, then editorTemplate will be used<br />
+    cell: this is the html definition of cell when the table is shown, it content will be APPEND to the td, if not provided, the td it self will be use as template or th</p>
 
 <p>for table paging binding<br />
 data-bind="tablePaging:{<br />

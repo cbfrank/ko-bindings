@@ -135,6 +135,27 @@ or
         </tr>
     </tbody>
 <table>
+or
+<table id="vesselInstanceTable" data-bind="table: { source: oDataItems.items }">
+    <thead>
+    ...
+    </thead>
+    <tbody>
+        <tr>
+            <td data-bind="text:Name" dataItemProperty="Name" order-field="Name"/>
+            <td cellTemplate="InstanceNo" notEdit="notEdit" notAdd="notAdd"/>
+            <td cellTemplate="Name"
+                editorFinishEvent="blur"
+                editorFinish="some code to trigger the finish edit">
+                <templates>
+                    <editor>
+                        <input type="text" data-bind='{value:Name}' class='validate[required]'/>
+                    </editor>
+                </templates>
+            </td>
+        </tr>
+    </tbody>
+<table>
 -->
 Explain:
 you can add addition attributes on both td or th
@@ -165,6 +186,17 @@ The additional attributes can be:
                 will be added to the table binding orders array
   notOrder: normally, if the column provide order-field or dataItemProperty, then it will be able ordered by default, in case user provide dataItemProperty and not want it order able, then add notOrder="notOrder" to disable order function for this column
             if notOrder="notOrder" is added to table, then the whole order function will be disabled
+for the td, it can have children of templates, for example:
+<!--
+    <templates>
+        <editor>
+            <input type="text" data-bind='{value:Name}' class='validate[required]'/>
+        </editor>
+    </templates>
+-->
+there are two kinds of nodes can be defined in templates
+    editor: this is the html definition of the editor when user try to edit (add or change) this cell, if not provided, then editorTemplate will be used
+    cell: this is the html definition of cell when the table is shown, it content will be APPEND to the td, if not provided, the td it self will be use as template or th
 
 for table paging binding
 data-bind="tablePaging:{

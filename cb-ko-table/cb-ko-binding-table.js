@@ -1,5 +1,11 @@
-﻿function jsonObjectToKoViewModel(json) {
+﻿function jsonObjectToKoViewModel(json, replaceWithObservableOnSameObject) {
     var obj = {};
+    if (typeof (replaceWithObservableOnSameObject) === "undefined") {
+        replaceWithObservableOnSameObject = false;
+    }
+    if (replaceWithObservableOnSameObject) {
+        obj = json;
+    }
     for (var p in json) {
         if (ko.isObservable(json[p])) {
             obj[p] = json[p];
@@ -1112,7 +1118,7 @@ var tableCreater = {};
                 //use tableElementAttachData.originalRows as template to create rows
                 //we also append a property "rowsSourceData" to the bindingContext, which is the value of source variable
                 //so that in the with binding, we can use it.
-                //after below block of code, the todby will contains all the rows template for all the data item
+                //after below block of code, the tbody will contains all the rows template for all the data item
                 //and each tr is surrounded with <!-- ko with: rowsSourceData[*] -->
                 //for example:
                 //<!-- ko with: rowsSourceData[*] -->
@@ -1131,11 +1137,22 @@ var tableCreater = {};
                             continue;
                         }
                         var tr = $(tableElementAttachData.originalRows[templateIndex]).clone();
-                        //tr.attr("tabindex", tabindex);
+                        var cellCount = tr.children("td").length;
+                        tr.children("td").remove();
+
                         tabindex += 10;
-                        for (var cellIndex = 0; cellIndex < tr.children("td").length; cellIndex++) {
+                        for (var cellIndex = 0; cellIndex < cellCount; cellIndex++) {
+                            var cell = tableCreater.getCellTemplate(table, i, cellIndex);
+                            var cellCreated;
+                            if (cell instanceof jQuery) {
+                                cellCreated = cell;
+                            } else {
+                                cellCreated = tableCreater.createCellTemplate(source[i], cell, tr);
+                            }
+                            tr.append(cellCreated);//*/
                             $(tr.children("td")[cellIndex]).attr("tabindex", tabindex);
                             tabindex += 10;
+                            //tableCreater.clearTemplatesDefinition($(tr.children("td")[cellIndex]));
                         }
                         table.children("tbody").append("<!-- ko with: rowsSourceData[" + i + "] -->");
                         table.children("tbody").append(tr);
@@ -1730,7 +1747,7 @@ var tableCreater = {};
                     return undefined;
                 },
                 function (attachData) {
-                    return jsonObjectToKoViewModel(_.UO(attachData.bindingData.newItem).call(attachData.viewModel));
+                    return jsonObjectToKoViewModel(_.UO(attachData.bindingData.newItem).call(attachData.viewModel, true));
                 }, true,
                 function (attachData, item, copiedItem, editMode) {
                     _.TCRUD.assignEditItem(attachData, copiedItem, item);
@@ -1932,8 +1949,11 @@ var tableCreater = {};
 
 //plugin
 tableCreater = $.extend(tableCreater, {
+    templatesTagName: "templates",
     cellTemplateAttrName: "cellTemplate",
+    cellTemplateTagName: "cell",
     editorTemplateAttrName: "editorTemplate",
+    editorTemplateTagName: "editor",
     dataItemPropertyAttrName: "dataItemProperty",
     tdClassAttrName: "tdClass",
     notEditAttrName: "notEdit",
@@ -2183,16 +2203,25 @@ tableCreater = $.extend(tableCreater, {
         return { root: root, cancelBtn: cancelBtn, okBtn: okBtn };
     },
 
-    //get the attribute value defined in cell original template (original tr in tbody), if no tr in tbody or no such attribute in this cell template, then try to find from the corresponding thead > tr > td
-    getTemplateAttribute: function (table, rowIndex, colIndex, attrName) {
+    getOriginalRowCell: function (table, rowIndex, colIndex) {
+        table = $(table);
         var originalRows = tableCreater._.data(table).originalRows;
-        var attrValue;
         if (originalRows && originalRows.length > 0) {
             rowIndex = rowIndex % originalRows.length;
+            return $($(originalRows[rowIndex]).children()[colIndex]);
+        }
+        return undefined;
+    },
+
+    //get the attribute value defined in cell original template (original tr in tbody), if no tr in tbody or no such attribute in this cell template, then try to find from the corresponding thead > tr > td
+    getTemplateAttribute: function (table, rowIndex, colIndex, attrName) {
+        var attrValue;
+        var originalRowCell = $(tableCreater.getOriginalRowCell(table, rowIndex, colIndex));
+        if (originalRowCell) {
             if (typeof (attrName) === "undefined") {
-                attrValue = $($(originalRows[rowIndex]).children()[colIndex]);
+                attrValue = originalRowCell.clone();
             } else {
-                attrValue = $($(originalRows[rowIndex]).children()[colIndex]).attr(attrName);
+                attrValue = originalRowCell.attr(attrName);
             }
             if (attrValue) {
                 return attrValue;
@@ -2200,7 +2229,7 @@ tableCreater = $.extend(tableCreater, {
         }
         var trOfHead = $($(table.children("thead")[0]).children("tr")[0]);
         if (typeof (attrName) === "undefined") {
-            return $(trOfHead.children()[colIndex]);
+            return $(trOfHead.children()[colIndex]).clone();
         } else {
             return $(trOfHead.children()[colIndex]).attr(attrName);
         }
@@ -2251,7 +2280,75 @@ tableCreater = $.extend(tableCreater, {
         return typeof (attrValue) !== "undefined";
     },
 
+    //this function return the html of the result
+    changeTag: function (element, newTag, returnHtml) {
+        element = $(element);
+        var nodeHtml = element[0].outerHTML.toLowerCase();
+        var nodeTag = element.prop("tagName").toLowerCase();
+        nodeHtml = "<" + newTag + ">" + nodeHtml.substring(nodeTag.length + 2);
+        if (nodeHtml.indexOf("/>", nodeHtml.length - "/>".length) === -1) { //not end with />
+            nodeHtml = nodeHtml.substr(0, nodeHtml.length - ("</" + nodeTag + ">").length) + "</" + newTag + ">";
+        }
+        if (returnHtml) {
+            return nodeHtml;
+        }
+        return $(nodeHtml);
+    },
+
+    //get the defined template inside the tr/td in the tbody
+    //such as <templates><cell>...</cell></template>, <templates><editor>...</editor></template>
+    //please note: it return the node <cell> or <editor> and so on not only their childern
+    getCellTemplateNodeOfOriginalRow: function (table, rowIndex, colIndex, templateTag) {
+        table = $(table);
+        //1. try to get the <templates><cell>...</cell></template> from the tr/td in the tbody
+        var originalRowCell = tableCreater.getOriginalRowCell(table, rowIndex, colIndex);
+        if (originalRowCell) {
+            var templates = originalRowCell.children(tableCreater.templatesTagName);
+            if (templates && templates.length > 0) {
+                var cellTemplate = originalRowCell.find(templateTag);
+                if (cellTemplate && templates.length > 0) {
+                    return cellTemplate;
+                }
+            }
+        }
+        return undefined;
+    },
+
+    clearTemplatesDefinition: function (cell) {
+        $(cell).children(tableCreater.templatesTagName).remove();
+    },
+
+    //this function get the template str that how the td should be shown in the table
+    //if return string then the is BIND: *** or HTML: *** or any other valid string
+    //if return JQuery object, then it is the td it self and can be used directly
+    getCellTemplate: function (table, rowIndex, colIndex) {
+        table = $(table);
+        //1. try to get the <templates><cell>...</cell></template> from the tr/td in the tbody
+        var result = tableCreater.getCellTemplateNodeOfOriginalRow(table, rowIndex, colIndex, tableCreater.cellTemplateTagName);
+
+        //2. if failed, then try to get the definition from the attribute in tr/td in the tbody or thead
+        if (typeof (result) === "undefined") {
+            result = tableCreater.getTemplateAttribute(table, rowIndex, colIndex, tableCreater.cellTemplateAttrName);
+        } else { //get template successfully, change it to html rxpression
+            var originalRowCell = tableCreater.getOriginalRowCell(table, rowIndex, colIndex);
+            if (typeof (originalRowCell) === "undefined") {
+                originalRowCell = $("<td>");
+            }
+            originalRowCell = originalRowCell.clone();
+            tableCreater.clearTemplatesDefinition(originalRowCell);
+            originalRowCell.append(result.html());
+            result = originalRowCell;
+        }
+        //3. if failed, then try to get the td/td it self
+        if (typeof (result) === "undefined") {
+            result = tableCreater.getTemplateAttribute(table, rowIndex, colIndex, undefined);
+            tableCreater.clearTemplatesDefinition(result)
+        }
+        return result;
+    },
+
     //col is the corresponding td in the thead
+    //always return string which is BIND: *** or HTML: *** or any other valid string
     getCellEditorTemplate: function (col, action, table) {
         table = $(table);
         col = $(col);
@@ -2263,27 +2360,25 @@ tableCreater = $.extend(tableCreater, {
                 rowIndex = $(selectedRow[0]).index();
             }
         }
+        var shouldChangeToHTMLExpression = false;
+        var resultTemplate = tableCreater.getCellTemplateNodeOfOriginalRow(table, rowIndex, col.index(), tableCreater.editorTemplateTagName);
 
-        var resultTemplate = tableCreater.getTemplateAttribute(table, rowIndex, col.index(), tableCreater.editorTemplateAttrName);
-        if (typeof (resultTemplate) === "undefined" || tableCreater.isColReadOnly(table, col.index(), action)) {
-            resultTemplate = tableCreater.getTemplateAttribute(table, rowIndex, col.index(), tableCreater.cellTemplateAttrName);
-        }
         if (typeof (resultTemplate) === "undefined") {
-            resultTemplate = tableCreater.getTemplateAttribute(table, rowIndex, col.index(), undefined);
-
-            var template = tableCreater.templatePreFix_HTML;
-            //change node to div
-            var nodeHtml = resultTemplate[0].outerHTML.toLowerCase();
-            var nodeTag = resultTemplate.prop("tagName").toLowerCase();
-            nodeHtml = "<div>" + nodeHtml.substring(nodeTag.length + 2);
-            if (nodeHtml.indexOf("/>", nodeHtml.length - "/>".length) === -1) {//not end with />
-                nodeHtml = nodeHtml.substr(0, nodeHtml.length - ("</" + nodeTag + ">").length) + "</div>";
-            }
-            template += nodeHtml;
-
-            resultTemplate = template;
+            resultTemplate = tableCreater.getTemplateAttribute(table, rowIndex, col.index(), tableCreater.editorTemplateAttrName);
+        } else { //get editor template success
+            resultTemplate = resultTemplate.html();
+            shouldChangeToHTMLExpression = true;
         }
-
+        if (typeof (resultTemplate) === "undefined" || tableCreater.isColReadOnly(table, col.index(), action)) {
+            resultTemplate = tableCreater.getCellTemplate(table, rowIndex, col.index());
+            if (resultTemplate && (resultTemplate instanceof jQuery)) { //get td node it self success
+                resultTemplate = tableCreater.changeTag(resultTemplate, "div", true);
+                shouldChangeToHTMLExpression = true;
+            }
+        }
+        if (shouldChangeToHTMLExpression) {
+            resultTemplate = tableCreater.templatePreFix_HTML + " " + resultTemplate;
+        }
         return resultTemplate;
     },
 
