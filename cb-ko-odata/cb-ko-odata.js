@@ -9,7 +9,7 @@
 //  getTotalCountMethod: string, "get" or "post"
 //  getDataItemKey: function(dataItem) //return the value of the key of the dataItem, normally, the dataItem is alrady converted to plan json object
 //  onBeginSaving: function() //will be called when begin to save all items
-//  onEndSaving: function(hasError:bool, hasChanges:bool)  //will be called when the save finished
+//  onEndSaving: function(hasError:bool, hasChanges:bool, totalNumMayChanged: bool)  //will be called when the save finished
 //  dateProperties: 
 //     if is the array of string, then it is the array of all the properites that should be of the type date, and if the date string is generic, then they should be parsed as Utc (if the date string is specified with Z or timezone, then it will be parsed exactly)
 //     if is the array of object, then each object should be {name:****, asUtc:true/false}, the name is the property name, the asUtc means the generic time string should be parsed as Utc time or local time (if the date string is specified with Z or timezone, then it will be parsed exactly)
@@ -438,7 +438,7 @@ var ODataCollection = function (option) {
 
             save(itemIndex, function () {
                 if (option.onEndSaving) {
-                    option.onEndSaving(hasError, hasChanges);
+                    option.onEndSaving(hasError, hasChanges, totalNumMayChanged);
                 }
                 if (option.onAsyncActionEnd) {
                     option.onAsyncActionEnd("SAVE");
