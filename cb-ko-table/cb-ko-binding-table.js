@@ -307,6 +307,7 @@ var tableCreater = {};
                         editor.attr("tabindex", currentCell.attr("tabindex") + 5);
 
                         currentCell.width(currentCell.width());
+                        currentCell.addClass(tableCreater.inlineEditingCellClass);
                         var editorDiv = $("<div/>");
                         _.TCRUD.cellInlinEditorDiv(currentCell, editorDiv);
                         editorDiv.attr("tabindex", currentCell.attr("tabindex") + 1);
@@ -409,6 +410,7 @@ var tableCreater = {};
 
         endCellInlineEdit: function (theCell, reason) {
             theCell = $(theCell);
+            theCell.removeClass(tableCreater.inlineEditingCellClass);
             var table = theCell.parents("table")[0];
             var attachData = _.getRelatedCRUDAttachData(table);
             //we have already make the attachData consist, so can just use the first one
@@ -1167,7 +1169,7 @@ var tableCreater = {};
                 }
             }
             if (tableBindingData.orders) {
-                _.TB.updateHeaderByOrders(table, _.UO(tableBindingData.orders))
+                _.TB.updateHeaderByOrders(table, _.UO(tableBindingData.orders));
             }
             if (init) {
                 //3. Apply binding data, as we return { controlsDescendantBindings: true }, so ko won't automaticly apply binding data to all
@@ -2054,6 +2056,7 @@ tableCreater = $.extend(tableCreater, {
     focusRowClass: "focus-cb-ko-binding-table-row",
     selectedCellClass: "selected-cb-ko-binding-table-cell",
     focusCellClass: "focus-cb-ko-binding-table-cell",
+    inlineEditingCellClass: "inline-editing-cb-ko-binding-table-cell",
     orderedAscHeaderClass: "order-asc-cb-ko-binding-table-header",
     orderedDescHeaderClass: "order-desc-cb-ko-binding-table-header",
     buttonDefaultNames: {
