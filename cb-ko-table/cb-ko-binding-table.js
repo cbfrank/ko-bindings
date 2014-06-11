@@ -1178,10 +1178,20 @@ var tableCreater = {};
                     ko.applyBindingsToDescendants(bindingContext, table.children()[j]);
                 }
                 if (typeof (table.attr(tableCreater.notOrderAttName)) === "undefined") {
+                    thead.children().children().each(function (index, theElement) {
+                        var theTH = $(theElement);
+                        if (tableCreater.isCellOrderable(theTH)) {
+                            theTH.addClass(tableCreater.orderableColumnClass);
+                        } else {
+                            return;
+                        }
+                    });
                     //add event for header click to trigger order
                     thead.children().children().on('click', function (event) {
                         var th = $(event.currentTarget);
-                        if (!tableCreater.isCellOrderable(th)) {
+                        if (tableCreater.isCellOrderable(th)) {
+
+                        } else {
                             return;
                         }
                         var orderField = tableCreater.getCellOrderField(th);
@@ -2059,6 +2069,7 @@ tableCreater = $.extend(tableCreater, {
     inlineEditingCellClass: "inline-editing-cb-ko-binding-table-cell",
     orderedAscHeaderClass: "order-asc-cb-ko-binding-table-header",
     orderedDescHeaderClass: "order-desc-cb-ko-binding-table-header",
+    orderableColumnClass: "orderable-column-cb-ko-binding-table-header",
     buttonDefaultNames: {
         addBtnName: "addrowbutton",
         delBtnName: "deleterowbutton",
