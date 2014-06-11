@@ -884,16 +884,19 @@ var tableCreater = {};
             data.tableBindingData = bindingData;
         },
 
-        addNewDataRow: function (table, dataItem) {
+        addNewDataRow: function (table, dataItem, appendToEnd) {
+            if (typeof (appendToEnd) === "undefined") {
+                appendToEnd = true;
+            }
             _.TCRUD.modelStatus(dataItem, _.TCRUD.modelStatusConsts.New);
             var attachData = _.data(table);
-
-            if (attachData.tableBindingData.source.push) { //try test if the attachData.tableBindingData.source deinens push then use it
-                attachData.tableBindingData.source.push(dataItem);
+            var addMethod = appendToEnd ? "push" : "unshift";
+            if (attachData.tableBindingData.source[addMethod]) { //try test if the attachData.tableBindingData.source deinens push then use it
+                (attachData.tableBindingData.source[addMethod])(dataItem);
             } else if (ko.isObservable(attachData.tableBindingData.source)) {
                 //if is observable, then just add new item to the potential data collection and reset the observable to trigger the update function
                 var source = attachData.tableBindingData.source();
-                source.push(dataItem);
+                (source[addMethod])(dataItem);
                 attachData.tableBindingData.source(source);
             } else {
                 throw "can NOT porcess the data soure, don't know what it is";
@@ -1764,7 +1767,7 @@ var tableCreater = {};
                 function (attachData, item, copiedItem, editMode) {
                     _.TCRUD.assignEditItem(attachData, copiedItem, item);
 
-                    _.TB.addNewDataRow(attachData.targetTable, item);
+                    _.TB.addNewDataRow(attachData.targetTable, item, _.UO(attachData.bindingData.addNewItemToEnd));
                     _.TB.clearAllRowsSelection(attachData.targetTable);
                     //if is inline edit mode, then auto begin edit of the first ediable cell
                     if (editMode === _.TCRUD.editMode.inline) {

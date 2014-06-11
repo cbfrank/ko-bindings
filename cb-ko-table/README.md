@@ -82,6 +82,8 @@ data-bind = "tableCRUD: {
                 //modalContent: the jquery object of the content element of the Modal (of course it is the children of the modalRoot and if addEditorSelector/delEditorSelector/changeEditorSelector provided, it is the clone of the element jquery object selected by these selector)
                 //okBtn,cancelBtn
                 //targetDataItem: although it has same properties values as the current edit data item, but actual it is the cpoied of the data item, but this targetDataItem is the actual one that is bound to Modal
+    addNewItemToEnd: bool, indicate if the new item should be added at the end of the table or at the top of the table, default is undefined, which has same result as of true
+                //means add the end of the table
 }
 the crud element (any html node that can have children nodes) has the attach data which is
 {
