@@ -7,6 +7,9 @@ data-bind = "table: {
     orders: observableArray, an array indicate the current ordered header, each element has two properties, {field: string, asc: bool}, field indicate order by which field, 
              it's the value of the header attribute order-field (if not provided, then dataItemProperty will be used),
              asc: indicate if the order is asc or desc, when user click on any header to order, it will changed
+    beforeOrder: a function (orderField:string, th:Jquery of the th element, event: eventobject), 
+            //if provied, it will be called every time when user try to order, the orderField is the field that currently try to order on
+            //return false will stop the order otherwise, it will continue
 }"
 
 table element has the attach data which is 

@@ -1192,12 +1192,17 @@ var tableCreater = {};
                     //add event for header click to trigger order
                     thead.children().children().on('click', function (event) {
                         var th = $(event.currentTarget);
+                        var orderField = tableCreater.getCellOrderField(th);
+                        if (tableBindingData.beforeOrder) {
+                            if ((_.UO(tableBindingData.beforeOrder)).call(viewModel, orderField, th, event) === false) {
+                                return;
+                            }
+                        }
                         if (tableCreater.isCellOrderable(th)) {
 
                         } else {
                             return;
                         }
-                        var orderField = tableCreater.getCellOrderField(th);
                         if (!orderField) {
                             return;
                         }
