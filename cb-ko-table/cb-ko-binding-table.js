@@ -353,11 +353,40 @@ var tableCreater = {};
                         editorDiv.append(editor);
 
                         ko.applyBindings(attachData.bindingContext.createChildContext(copiedItem), editor[0]);
+                        //after the editor is append to the editorDiv, and ko binding is applied
+                        //some new agent control may be created
+                        //so in some case, the editorDiv.height is not enough
+                        //so we make sure the editorDiv will auto extend in case it can't hold all content
+                        //first we set it height to auto to make it as height as need, then check the new height to the old
+                        //if the new height is bigger, then we keep it as auto, and set min-height of the cell height to avoid it becomes smaller in some case
+                        //if the new height is samller, as we can't reduce the cell(row) height, so we set min-height of the cell height to make sure it always fill the cell
+                        setTimeout(function () {
+                            var cellHeight = editorDiv.height();
+                            editorDiv.height("auto");
+                            //if (editorDiv.height() <= cellHeight) {
+                            //    editorDiv.height(cellHeight);
+                            //} else {
+
+                            //}
+                            editorDiv.css("min-height", cellHeight);
+                        }, 80);
+
                         if (bindingData.beforeShowEditor) {
                             _.UO(bindingData.beforeShowEditor).call(attachData.viewModel, editAction, editor, copiedItem);
                         }
 
                         currentCell.append(editorDiv);
+                        //after div is append to cell, for some specialy editor (such as multi selector chosen control), a new, temp html element will be created and use the agent contrl, 
+                        //their height may changes from time to time
+                        //but the table cell won't know this, although we can set container height to auto, but in the case if editor smaller than the row height,
+                        //there will be space between the container div and the cell, in this case, only the editor creator konw every thing
+                        //so we let the creatro register a handler, and it will be called after the editor is append to the cell
+                        var afterAppendHandler = tableInlineEditAfterEditorAppendInHtmlHandler.getHandlerForEditor(editor, true);
+                        if (afterAppendHandler) {
+                            afterAppendHandler(currentCell, editor, undefined);
+                        }
+
+
                         var rowIndex = (editAction === _.TCRUD.crudActionTypes.change ? currentRow.index() : 0);
                         var endEditFunction = function () {
                             _.CellMouseManager.endCellInlineEdit(currentCell);
@@ -2584,7 +2613,7 @@ var tableResource = {
     NoRowSelectDel: 'Please select the row that you want to delete!'
 };
 
-var tableInlineEditFinishHandler = new (function () {
+var tableInlineEditHandlerClass = function () {
     var self = this;
     this.handlers = [];
     this.registerHandler = function (selector, processFunction) {
@@ -2624,9 +2653,16 @@ var tableInlineEditFinishHandler = new (function () {
             return undefined;
         }
     }
-})();
+};
+
+var tableInlineEditFinishHandler = new tableInlineEditHandlerClass();
 
 tableInlineEditFinishHandler.registerHandler("", function ($currentCell, $editor, $endEdit) {
+
+});
+
+var tableInlineEditAfterEditorAppendInHtmlHandler = new tableInlineEditHandlerClass();
+tableInlineEditAfterEditorAppendInHtmlHandler.registerHandler("", function ($currentCell, $editor, $endEdit) {
 
 });
 
