@@ -43,13 +43,6 @@ data-bind = "table: {
             }
             chosen = $(element).chosen(chosenOpt);
 
-            //hack: if the any parent of chosen css is set to "overflow: hidden", 
-            //and the parent height is less to show the full chosen input and drop down, then the drowdown can't be show
-            //here we add a div in side the form, as the root container, then it is ok
-            if ($(element).parent()) {
-                //on a modal
-            }
-
             chosen.change(function (event, data) {
                 _.CO.updateValue(value, $(element).val(), element, allBindingsAccessor, bindingContext, viewModel);
                 //if (ko.isObservable(value.selectedValue)) {
@@ -259,6 +252,25 @@ data-bind = "table: {
                     $endEdit();
                 });
                 chosenDiv.focus();
+            });
+        }
+
+        if (typeof (tableInlineEditAfterEditorAppendInHtmlHandler) !== "undefined") {
+            //hacker for adjust multi selector height, becasue it may changes so we should make sure it fill but not exceed the cell
+            tableInlineEditAfterEditorAppendInHtmlHandler.registerHandler("." + _.CO.elementMarkClass, function ($currentCell, $editor, $endEdit) {
+                var parentTd = $currentCell;
+                var chosenMultiChoices = $($editor).parent().find("ul.chosen-choices");
+                //if we find it is multi selector, we will check
+                if (parentTd.length > 0 && chosenMultiChoices.length > 0) {
+                    parentTd = $(parentTd[0]);
+                    if (parentTd.is(".inline-editing-cb-ko-binding-table-cell")) { //current cell is being edited
+                        if (parentTd.children().height() > chosenMultiChoices.height()) {
+
+                        }
+                        //we just make sure the editor is not less heigh than the cell
+                        chosenMultiChoices.css("min-height", parentTd.children().height());
+                    }
+                }
             });
         }
     });
