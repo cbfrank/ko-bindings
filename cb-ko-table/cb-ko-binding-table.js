@@ -362,6 +362,7 @@ var tableCreater = {};
                         //if the new height is samller, as we can't reduce the cell(row) height, so we set min-height of the cell height to make sure it always fill the cell
                         setTimeout(function () {
                             var cellHeight = editorDiv.height();
+                            var editorHeight = editor.height();
                             editorDiv.height("auto");
                             //if (editorDiv.height() <= cellHeight) {
                             //    editorDiv.height(cellHeight);
@@ -369,6 +370,13 @@ var tableCreater = {};
 
                             //}
                             editorDiv.css("min-height", cellHeight);
+                            //when div height is set to auto
+                            //the height 100% for input doesn't work
+                            //so we compare it with the original height, if less than original, then directly set the editor height
+                            if (editorHeight > editor.height()) {
+                                editor.css("min-height", editorHeight);
+                                editor.height(editorHeight);
+                            }
                         }, 80);
 
                         if (bindingData.beforeShowEditor) {
