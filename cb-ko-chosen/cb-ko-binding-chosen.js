@@ -256,19 +256,21 @@ data-bind = "table: {
         }
 
         if (typeof (tableInlineEditAfterEditorAppendInHtmlHandler) !== "undefined") {
-            //hacker for adjust multi selector height, becasue it may changes so we should make sure it fill but not exceed the cell
+            //hacker for adjust selector height, becasue
+            //1. if multi selector it may changes so we should make sure it fill but not exceed the cell
+            //2. if single, and the cell is too high, may be the single selector is not height engouh
             tableInlineEditAfterEditorAppendInHtmlHandler.registerHandler("." + _.CO.elementMarkClass, function ($currentCell, $editor, $endEdit) {
                 var parentTd = $currentCell;
-                var chosenMultiChoices = $($editor).parent().find("ul.chosen-choices");
-                //if we find it is multi selector, we will check
-                if (parentTd.length > 0 && chosenMultiChoices.length > 0) {
+                var chosenChildElement = $($editor).parent().find("ul.chosen-choices, a.chosen-single");
+                //if we find the element should be checked
+                if (parentTd.length > 0 && chosenChildElement.length > 0) {
                     parentTd = $(parentTd[0]);
                     if (parentTd.is(".inline-editing-cb-ko-binding-table-cell")) { //current cell is being edited
-                        if (parentTd.children().height() > chosenMultiChoices.height()) {
+                        if (parentTd.children().height() > chosenChildElement.height()) {
 
                         }
                         //we just make sure the editor is not less heigh than the cell
-                        chosenMultiChoices.css("min-height", parentTd.children().height());
+                        chosenChildElement.css("min-height", parentTd.children().height());
                     }
                 }
             });
