@@ -2562,7 +2562,7 @@ tableCreater = $.extend(tableCreater, {
     createPagingNavigateContent: function (currentPageIndex, totalPagesCount, itemsCountOnePage, maxIndexCount, attachData) {
         var ul = $("<ul class='dataTables_paginate paging_bootstrap pagination' />");
         var navFunction = function (index) {
-            (ko.utils.unwrapObservable(attachData.bindingData.fetchItems))(ko.utils.unwrapObservable(attachData.bindingData.fetchUrl), index);
+            (ko.utils.unwrapObservable(attachData.bindingData.fetchItems))(index);
         };
         ul.append(tableCreater.createFirstPageIndex(currentPageIndex, navFunction));
         var firstIndexPage = currentPageIndex - parseInt(maxIndexCount / 2, 10);

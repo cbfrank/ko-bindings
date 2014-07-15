@@ -210,8 +210,7 @@ data-bind="tablePaging:{
   totalCount: total record items count
   onePageItemsCount: record itmes count on one page
   currentPageIndex: int
-  fetchUrl:  the url will passed to fetchItems function, if it is not provied, then the pageIndex will be the first param to the fetchItems function
-  fetchItems: the function(fetchUrl, pageIndex, fetchFinishedCallback) that update the items, when user click on any page index, this function will be called, the first and last params is not required
+  fetchItems: the function(pageIndex, fetchFinishedCallback) that update the items, when user click on any page index, this function will be called, the last params is not required
 }"
 
 the page element has the following attachdata
