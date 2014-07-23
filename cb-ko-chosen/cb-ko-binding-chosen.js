@@ -5,10 +5,12 @@ data-bind = "table: {
     source: ***, //source items
     valueProp: *** //the property (string, or expression string) of the items in source or a function that will be used as the value of the option, if undefined, then the item it self will be used as the value of the option
                    //then the value will be add into selectedValue (array) or set to selectedValue when the option is selected
-    valuePropertyForMatch: *** //the property (string, or expression string) of the items in source or a function that will be used to compare with the selectedValue.selectedValueItemProp or selectedValue[i].selectedValueItemProp
+    valuePropertyForMatch: *** //the property (string, or expression string) of the option item value or a function (which input the option item value) that will be used to compare with the selectedValue.selectedValueItemProp or selectedValue[i].selectedValueItemProp
                             //to determin if an option should be shown as selected or not
+//Please Note: valueProp is the property of the items in source, then get that property value and set it as the value of the option items.
+//              valuePropertyForMatch will be used when comparing the option item to the selected value or convert option item value to the selected value
     selectedValue: *** //the value that user is selected, it can be array
-    selectedValueItemProp: the prop of the items in selectedValue array, that will be used to match the value in source
+    selectedValueItemProp: the prop of the items in selectedValue array, that will be used to match the value of each option
     displayProp: the property of the items in source that will be used as the text of the option, it also can be a valid expression, the "this" is current item, and we can also use $parent, $parents, $data and $root
     isOptionGroup: the property name (string) or an string of expression or a function(item) that return boolean to determin if a item in the source is a normal option or the group of the options, 
         default is undefine, means not group, if is string, then if the item in the source has the property specified by string, then will use it, if not, then will take the string as an expression,
