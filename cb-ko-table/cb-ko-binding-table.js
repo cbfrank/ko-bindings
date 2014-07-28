@@ -485,6 +485,9 @@ var tableCreater = {};
                 if (dataItemVerifyPass) {
                     _.TCRUD.assignEditItem(attachData, currentEditDataItem, item, propName);
                     _.TCRUD.modelStatus(item, _.TCRUD.modelStatusConsts.Changed);
+                    if (bindingData.onDataChanged) {
+                        bindingData.onDataChanged.call(attachData.viewModel, _.TCRUD.crudActionTypes.change, item);
+                    }
                     if (ko.$helper && ko.$helper.browser.isIE && ko.$helper.browser.version <= 8) {
                         setTimeout(function () {
                             if (propName) {
@@ -938,6 +941,13 @@ var tableCreater = {};
             } else {
                 throw "can NOT porcess the data soure, don't know what it is";
             }
+            var crudAttachDatas = _.getRelatedCRUDAttachData(table);
+            for (var i = 0; i < crudAttachDatas.length; i++) {
+                var crudAttachData = crudAttachDatas[i];
+                if (crudAttachData.bindingData.onDataChanged) {
+                    crudAttachData.bindingData.onDataChanged.call(crudAttachData.viewModel, _.TCRUD.crudActionTypes.add, dataItem);
+                }
+            }
         },
 
         rowDataItem: function (tr, dataItem) {
@@ -979,6 +989,14 @@ var tableCreater = {};
                 _.TCRUD.modelStatus(dataItem, _.TCRUD.modelStatusConsts.Deleted);
                 var tableAttachData = _.data(table);
                 tableAttachData.tableBindingData.source.valueHasMutated();
+            }
+
+            var crudAttachDatas = _.getRelatedCRUDAttachData(table);
+            for (var i = 0; i < crudAttachDatas.length; i++) {
+                var crudAttachData = crudAttachDatas[i];
+                if (crudAttachData.bindingData.onDataChanged) {
+                    crudAttachData.bindingData.onDataChanged.call(crudAttachData.viewModel, _.TCRUD.crudActionTypes['delete'], dataItem);
+                }
             }
         },
 
@@ -1804,7 +1822,11 @@ var tableCreater = {};
                     return undefined;
                 },
                 function (attachData) {
-                    return jsonObjectToKoViewModel(_.UO(attachData.bindingData.newItem).call(attachData.viewModel, true));
+                    var newItem = _.UO(attachData.bindingData.newItem).call(attachData.viewModel, true);
+                    if (typeof (attachData.bindingData.autoConvertNewItemAsKoObservable) === "undefined" || attachData.bindingData.autoConvertNewItemAsKoObservable == true) {
+                        newItem = jsonObjectToKoViewModel(newItem);
+                    }
+                    return newItem;
                 }, true,
                 function (attachData, item, copiedItem, editMode) {
                     _.TCRUD.assignEditItem(attachData, copiedItem, item);
@@ -1904,6 +1926,9 @@ var tableCreater = {};
                 function (attachData, item, copiedItem, editMode) {
                     _.TCRUD.assignEditItem(attachData, copiedItem, item);
                     _.TCRUD.modelStatus(item, _.TCRUD.modelStatusConsts.Changed);
+                    if (attachData.bindingData.onDataChanged) {
+                        attachData.bindingData.onDataChanged.call(attachData.viewModel, _.TCRUD.modelStatusConsts.Changed, item);
+                    }
                 });
         },
 

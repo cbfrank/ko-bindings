@@ -87,6 +87,9 @@ data-bind = "tableCRUD: {
                 //targetDataItem: although it has same properties values as the current edit data item, but actual it is the cpoied of the data item, but this targetDataItem is the actual one that is bound to Modal
     addNewItemToEnd: bool, indicate if the new item should be added at the end of the table or at the top of the table, default is undefined, which has same result as of true
                 //means add the end of the table
+    onDataChanged:(changeAction: string, item: TItem)=> void, will be called every time when user add/chenge/delete an item. changeAction is one of ko.bindingHandlers.tableCRUD.crudActionTypes
+    autoConvertNewItemAsKoObservable: boolean, indicate if the new item should be converted to an object with same properties but are all knockoutObasevable, if is undefine or true, means auto, 
+                //if is false, then won't convert. default is undefine.
 }
 the crud element (any html node that can have children nodes) has the attach data which is
 {
