@@ -19,11 +19,6 @@
         modelStatusConsts: ModelStatusConsts;
     }
 
-    interface IOrderFieldInfo {
-        field: string;
-        asc: boolean; //true means asc, false means desc
-    }
-
     export class TableCreater {
         templatesTagName: string;
         cellTemplateAttrName: string;
