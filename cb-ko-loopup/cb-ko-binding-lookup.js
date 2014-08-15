@@ -38,7 +38,7 @@ data-bind = "table: {
 
             var result = "";
             for (var j = 0; j < lookupValues.length; j++) {
-                for (var i = 0; i < source.length; i++) {
+                for (var i = 0; source && (i < source.length) ; i++) {
                     var v = lookupValues[j];
                     if (typeof (lookupValueItemProp) !== "undefined") {
                         v = v[lookupValueItemProp];

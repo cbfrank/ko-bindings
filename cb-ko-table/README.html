@@ -73,7 +73,8 @@ data-bind = "tableCRUD: {<br />
     beforeShowEditor: function(action, modalContent, targetDataItem) //this function will be called before the editor is shown, <br />
                 //action: ko.bindingHandlers.tableCRUD.crudActionTypes.add, ko.bindingHandlers.tableCRUD.crudActionTypes.change or ko.bindingHandlers.tableCRUD.crudActionTypes['delete']<br />
                 //modalContent: is the editors container html node<br />
-                //targetDataItem: is the dataitem currently being edited<br />
+                //targetDataItem: is the dataitem currently being edited, it is a copy of the original item<br />
+                //return false will stop the edit to continue, otherwise the edit action will continue<br />
     prepareCRUDModal: function (action, modalRoot, modalContent, okBtn, cancelBtn, targetDataItem)<br />
                 //this function is just called after the  tableCreater.prepareCRUDModal is called<br />
                 //at this time, the crud modal is created and almost propared, it can be shown now, but we give a second chance to make some minior or any changes to the modal ui<br />
@@ -86,6 +87,9 @@ data-bind = "tableCRUD: {<br />
                 //targetDataItem: although it has same properties values as the current edit data item, but actual it is the cpoied of the data item, but this targetDataItem is the actual one that is bound to Modal<br />
     addNewItemToEnd: bool, indicate if the new item should be added at the end of the table or at the top of the table, default is undefined, which has same result as of true<br />
                 //means add the end of the table<br />
+    onDataChanged:(changeAction: string, item: TItem)=> void, will be called every time when user add/chenge/delete an item. changeAction is one of ko.bindingHandlers.tableCRUD.crudActionTypes<br />
+    autoConvertNewItemAsKoObservable: boolean, indicate if the new item should be converted to an object with same properties but are all knockoutObasevable, if is undefine or true, means auto, <br />
+                //if is false, then won't convert. default is undefine.<br />
 }<br />
 the crud element (any html node that can have children nodes) has the attach data which is<br />
 {<br />
@@ -209,8 +213,7 @@ data-bind="tablePaging:{<br />
   totalCount: total record items count<br />
   onePageItemsCount: record itmes count on one page<br />
   currentPageIndex: int<br />
-  fetchUrl:  the url will passed to fetchItems function, if it is not provied, then the pageIndex will be the first param to the fetchItems function<br />
-  fetchItems: the function(fetchUrl, pageIndex, fetchFinishedCallback) that update the items, when user click on any page index, this function will be called, the first and last params is not required<br />
+  fetchItems: the function(pageIndex, fetchFinishedCallback) that update the items, when user click on any page index, this function will be called, the last params is not required<br />
 }"</p>
 
 <p>the page element has the following attachdata<br />

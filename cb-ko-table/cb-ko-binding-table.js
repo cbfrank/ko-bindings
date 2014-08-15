@@ -353,6 +353,13 @@ var tableCreater = {};
                         editorDiv.append(editor);
 
                         ko.applyBindings(attachData.bindingContext.createChildContext(copiedItem), editor[0]);
+
+                        if (bindingData.beforeShowEditor) {
+                            if (_.UO(bindingData.beforeShowEditor).call(attachData.viewModel, editAction, editor, copiedItem) === false) {
+                                return false;
+                            }
+                        }
+
                         //after the editor is append to the editorDiv, and ko binding is applied
                         //some new agent control may be created
                         //so in some case, the editorDiv.height is not enough
@@ -378,10 +385,6 @@ var tableCreater = {};
                                 editor.height(editorHeight);
                             }
                         }, 80);
-
-                        if (bindingData.beforeShowEditor) {
-                            _.UO(bindingData.beforeShowEditor).call(attachData.viewModel, editAction, editor, copiedItem);
-                        }
 
                         currentCell.append(editorDiv);
                         //after div is append to cell, for some specialy editor (such as multi selector chosen control), a new, temp html element will be created and use the agent contrl, 
@@ -1823,8 +1826,31 @@ var tableCreater = {};
                 },
                 function (attachData) {
                     var newItem = _.UO(attachData.bindingData.newItem).call(attachData.viewModel, true);
-                    if (typeof (attachData.bindingData.autoConvertNewItemAsKoObservable) === "undefined" || attachData.bindingData.autoConvertNewItemAsKoObservable == true) {
+                    var convertOption = _.UO(attachData.bindingData.autoConvertNewItemAsKoObservable);
+                    if (typeof (convertOption) === "undefined" || convertOption == true) {
+                        if ($data && $data.Entity && typeof (newItem.asKoObservable) === "function" && $data.KoObservableEntity
+                            && ((newItem instanceof $data.Entity) || (newItem instanceof $data.KoObservableEntity))) {
+                            alert("if retun $data.Entity or $data.KoObservableEntity, bindingData.autoConvertNewItemAsKoObservable must be set to false")
+                        }
                         newItem = jsonObjectToKoViewModel(newItem);
+                    } else {
+                        if ($data && $data.Entity && typeof (newItem.asKoObservable) === "function" && $data.KoObservableEntity
+                            && (newItem instanceof $data.Entity)
+                            && !(newItem instanceof $data.KoObservableEntity)) {
+                            //when create new item with jaydata, to track it, user should user something like
+                            /* (dbContent is of type $data.EntityContext) (SomeTable is of type $data.EntitySet<UserModel>)
+                            var newItem = dbContent.SomeTable.add({
+                                    Id: ****,
+                                    Name: ****,
+                                    FKId: ****,
+                                    RolesId: []
+                                });
+                            it is not enought, to make the newItem editable, user should also call newItem = newItem.asKoObservable() and retun it
+                            */
+                            if (convertOption !== "IGNORENEWITEMJAYDATACHECK") {
+                                alert("It seems you are using jaydata and created a new entity, to work with tableCRUD binding, the new item should be as ko observable, please invoke newItem = newItem.asKoObservable() before return it, if this is not the case, set bindingData.autoConvertNewItemAsKoObservable to string 'IGNORENEWITEMJAYDATACHECK'");
+                            }
+                        }
                     }
                     return newItem;
                 }, true,

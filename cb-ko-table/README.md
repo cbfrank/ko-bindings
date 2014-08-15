@@ -74,7 +74,8 @@ data-bind = "tableCRUD: {
     beforeShowEditor: function(action, modalContent, targetDataItem) //this function will be called before the editor is shown, 
                 //action: ko.bindingHandlers.tableCRUD.crudActionTypes.add, ko.bindingHandlers.tableCRUD.crudActionTypes.change or ko.bindingHandlers.tableCRUD.crudActionTypes['delete']
                 //modalContent: is the editors container html node
-                //targetDataItem: is the dataitem currently being edited
+                //targetDataItem: is the dataitem currently being edited, it is a copy of the original item
+                //return false will stop the edit to continue, otherwise the edit action will continue
     prepareCRUDModal: function (action, modalRoot, modalContent, okBtn, cancelBtn, targetDataItem)
                 //this function is just called after the  tableCreater.prepareCRUDModal is called
                 //at this time, the crud modal is created and almost propared, it can be shown now, but we give a second chance to make some minior or any changes to the modal ui
