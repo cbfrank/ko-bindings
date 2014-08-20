@@ -1023,6 +1023,46 @@ var tableCreater = {};
             return undefined;
         },
 
+        getRelatedCRUDInlineEditTriggerBinding: function (tableElement) {
+            var tabledata = _.data(tableElement);
+            var crudDatas = tabledata.relatedCRUDDatas;
+            //make sure that all crud of the same table use same edit mode
+            if (crudDatas && crudDatas.length > 0) {
+                var lastEditTrigger = undefined;
+                for (var l = 0; l < crudDatas.length; l++) {
+                    if (typeof (lastEditTrigger) === "undefined") {
+                        lastEditTrigger = _.UO(crudDatas[l].bindingData.inlineEditTrigger);
+                    } else {
+                        if (lastEditTrigger !== _.UO(crudDatas[l].bindingData.inlineEditTrigger)) {
+                            throw "Not all tableCRUD binding for the same table specify same inlineEditTrigger.";
+                        }
+                    }
+                }
+                return lastEditTrigger;
+            }
+            return undefined;
+        },
+
+        getRelatedCRUDViewModel: function (tableElement) {
+            var tabledata = _.data(tableElement);
+            var crudDatas = tabledata.relatedCRUDDatas;
+            //make sure that all crud of the same table use same edit mode
+            if (crudDatas && crudDatas.length > 0) {
+                var lastViewModel = undefined;
+                for (var l = 0; l < crudDatas.length; l++) {
+                    if (typeof (lastViewModel) === "undefined") {
+                        lastViewModel = _.UO(crudDatas[l].viewModel);
+                    } else {
+                        if (lastViewModel !== _.UO(crudDatas[l].viewModel)) {
+                            throw "Not all tableCRUD binding for the same table specify same viewModel.";
+                        }
+                    }
+                }
+                return lastViewModel;
+            }
+            return undefined;
+        },
+
         init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
             if (element.tagName !== "TABLE") {
                 throw "'table' binding can only be applied to table node.";
@@ -1335,9 +1375,22 @@ var tableCreater = {};
                 });
                 var isInlineEditMode = (crudEditMode === _.TCRUD.editMode.inline);
                 if (isInlineEditMode) {
-                    tds.dblclick(function (event) {
-                        _.CellMouseManager.beginInlinEdit(table, event.currentTarget);
-                    });
+                    (function () {
+                        var editTrigger = _.TB.getRelatedCRUDInlineEditTriggerBinding(table);
+                        if (!editTrigger) {
+                            editTrigger = _.TCRUD.defaultInlineEditTrigger;
+                        }
+                        var triggerHandler = function (tdBeingEdit) {
+                            _.CellMouseManager.beginInlinEdit(table, tdBeingEdit);
+                        };
+                        if (typeof (editTrigger) === "string") {
+                            tds.on(editTrigger, function (event) {
+                                triggerHandler(event.currentTarget);
+                            })
+                        } else {
+                            editTrigger.call(_.TB.getRelatedCRUDViewModel(table), tds, triggerHandler);
+                        }
+                    })();
                     tds.on(_.TB.isFocusChangedEventName, function (eventObject, newFocus) {
                         if (!newFocus) {
                             _.CellMouseManager.endCellInlineEdit(eventObject.currentTarget);
@@ -1444,6 +1497,7 @@ var tableCreater = {};
             modalPopup: "ModalPopup",
             inline: "Inline"
         },
+        defaultInlineEditTrigger: "dblclick",
         inlineEditorClassTag: "ko-binding-table-inline-editor",
         //inlineEditorFinishedEventName: "finishEditEvent",
 

@@ -17,6 +17,11 @@
         crudActionTypes: ICRUDActionTypes;
         modelStatus(model: any, status?: string, force?: boolean): string;
         modelStatusConsts: ModelStatusConsts;
+        defaultInlineEditTrigger: any;
+    }
+
+    interface defaultInlineEditTriggerFuncType {
+        (tds: JQuery, startInlineEdit: (tdBeingEdit: JQuery) => void): void;
     }
 
     export class TableCreater {

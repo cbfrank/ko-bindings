@@ -91,6 +91,11 @@ data-bind = "tableCRUD: {
     onDataChanged:(changeAction: string, item: TItem)=> void, will be called every time when user add/chenge/delete an item. changeAction is one of ko.bindingHandlers.tableCRUD.crudActionTypes
     autoConvertNewItemAsKoObservable: boolean, indicate if the new item should be converted to an object with same properties but are all knockoutObasevable, if is undefine or true, means auto, 
                 //if is false, then won't convert. default is undefine.
+    inlineEditTrigger: string or function, this binding will only work when edit mode is ko.bindingHandlers.tableCRUD.editMode.inline
+                if string, then the table cell td's corresponding event will trigger the inline editmode, default is double click
+                if is function, it will be called every time the table cells are generated or refresh, and this function has params: (tds, startInlineEdit)
+                the param tds, is a jquery object of all cells, the startInlineEdit is a function (tdBeingEdit), tdBeingEdit is the td element that should start inline edit, this function should be call in inlineEditTrigger function to start inline edit on this cell
+                if inlineEditTrigger is not provide, the ko.bindingHandlers.tableCRUD.defaultInlineEditTrigger will be used, which is "dblclick", you can change ko.bindingHandlers.tableCRUD.defaultInlineEditTrigger to change global table crud trigger event
 }
 the crud element (any html node that can have children nodes) has the attach data which is
 {
