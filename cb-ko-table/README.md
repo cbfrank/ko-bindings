@@ -204,12 +204,12 @@ for the td, it can have children of templates, for example:
 <!--
     <templates>
         <editor>
-            <input type="text" data-bind='{value:Name}' class='validate[required]'/>
+            <input type="text" data-bind='value:Name' class='validate[required]'/>
         </editor>
     </templates>
 -->
 there are two kinds of nodes can be defined in templates
-    editor: this is the html definition of the editor when user try to edit (add or change) this cell, if not provided, then editorTemplate will be used
+    editor: this is the html definition of the editor when user try to edit (add or change) this cell, if not provided, then editorTemplate attribute will be used
     cell: this is the html definition of cell when the table is shown, it content will be APPEND to the td, if not provided, the td it self will be use as template or th
 
 for table paging binding
