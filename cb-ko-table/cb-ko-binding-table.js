@@ -475,48 +475,63 @@ var tableCreater = {};
                 var propName = tableCreater.getCellDataItemProperty(currentCell);
 
                 var dataItemVerifyPass = true;
+                var deferred = $.Deferred();
+                var promise = deferred;
                 if (esc) {
                     dataItemVerifyPass = false;
-                } else if (bindingData.dataItemVerify && (!bindingData.dataItemVerify.call(attachData.viewModel, currentEditDataItem, editorAttachData.editAction, theEditor, undefined,
-                    propName))) {
-                    dataItemVerifyPass = false;
-                }
-
-                if (typeof (editorAttachData.originalChildren) === "string") {
-                    currentCell.text(editorAttachData.originalChildren);
-                }
-                if (dataItemVerifyPass) {
-                    _.TCRUD.assignEditItem(attachData, currentEditDataItem, item, propName);
-                    _.TCRUD.modelStatus(item, _.TCRUD.modelStatusConsts.Changed);
-                    if (bindingData.onDataChanged) {
-                        bindingData.onDataChanged.call(attachData.viewModel, _.TCRUD.crudActionTypes.change, item);
+                    deferred.resolve();
+                } else if (bindingData.dataItemVerify) {
+                    var verifyResult = bindingData.dataItemVerify.call(attachData.viewModel, currentEditDataItem, editorAttachData.editAction, theEditor, undefined, propName);
+                    if (typeof (verifyResult) === "boolean" && !verifyResult) {
+                        dataItemVerifyPass = false;
+                        deferred.resolve();
                     }
-                    if (ko.$helper && ko.$helper.browser.isIE && ko.$helper.browser.version <= 8) {
-                        setTimeout(function () {
-                            if (propName) {
-                                if (ko.isObservable(item[propName])) {
-                                    item[propName].valueHasMutated();
-                                }
-                            } else {
-                                for (var p in item) {
-                                    if (ko.isObservable(item[p])) {
-                                        item[p].valueHasMutated();
+                    else if (verifyResult.then) { //JQ promise
+                        promise = verifyResult.then(function (result) {
+                            return dataItemVerifyPass = result;
+                        });
+                    } else {
+                        deferred.resolve();
+                    }
+                }
+                promise.then(function () {
+                    if (typeof (editorAttachData.originalChildren) === "string") {
+                        currentCell.text(editorAttachData.originalChildren);
+                    }
+                    if (dataItemVerifyPass) {
+                        _.TCRUD.assignEditItem(attachData, currentEditDataItem, item, propName);
+                        _.TCRUD.modelStatus(item, _.TCRUD.modelStatusConsts.Changed);
+                        if (bindingData.onDataChanged) {
+                            bindingData.onDataChanged.call(attachData.viewModel, _.TCRUD.crudActionTypes.change, item);
+                        }
+                        if (ko.$helper && ko.$helper.browser.isIE && ko.$helper.browser.version <= 8) {
+                            setTimeout(function () {
+                                if (propName) {
+                                    if (ko.isObservable(item[propName])) {
+                                        item[propName].valueHasMutated();
+                                    }
+                                } else {
+                                    for (var p in item) {
+                                        if (ko.isObservable(item[p])) {
+                                            item[p].valueHasMutated();
+                                        }
                                     }
                                 }
-                            }
-                        }, 50);
+                            }, 50);
+                        }
+                    } else {
+                        //currentEditDataItem = item;
+                        //why we need revocer the item
+                        //in idea, it should not be changed
+                        //but unfortunatel, is will be change by unknow reason, the editor will trigger a change event with empty value and if there is a format biding, 
+                        //actually, the origianl item is changed
+                        _.TCRUD.assignEditItem(attachData, editorAttachData.copiedDateItem2, item, propName);
                     }
-                } else {
-                    //currentEditDataItem = item;
-                    //why we need revocer the item
-                    //in idea, it should not be changed
-                    //but unfortunatel, is will be change by unknow reason, the editor will trigger a change event with empty value and if there is a format biding, 
-                    //actually, the origianl item is changed
-                    _.TCRUD.assignEditItem(attachData, editorAttachData.copiedDateItem2, item, propName);
-                }
-                if (typeof (editorAttachData.originalChildren) !== "string" && editorAttachData.originalChildren) {
-                    editorAttachData.originalChildren.show();
-                }
+                    if (typeof (editorAttachData.originalChildren) !== "string" && editorAttachData.originalChildren) {
+                        editorAttachData.originalChildren.show();
+                    }
+                });
+                return promise;
             }
 
             if (!_.TCRUD.isCellInlineEditing(theCell)) {
@@ -534,14 +549,15 @@ var tableCreater = {};
             editorDiv.children().trigger("blur", _.TCRUD.triggerBlurForKOUpdate);
             _.removeDataEx(editorDiv, _.TCRUD.triggerBlurForKOUpdate);
             var eventData = {};
-            onFinishedEdit(theCell, eventData, reason === _.TCRUD.triggerEndInlineEditForESC);
-            editorDiv.empty();
-            editorDiv.remove();
-            _.TCRUD.cellInlinEditorDiv(theCell, undefined);
-            if (eventData.afterEditorsRemoved) {
-                eventData.afterEditorsRemoved();
-            }
-            _.TCRUD.setCellInlineEditiong(theCell, false);
+            onFinishedEdit(theCell, eventData, reason === _.TCRUD.triggerEndInlineEditForESC).then(function () {
+                editorDiv.empty();
+                editorDiv.remove();
+                _.TCRUD.cellInlinEditorDiv(theCell, undefined);
+                if (eventData.afterEditorsRemoved) {
+                    eventData.afterEditorsRemoved();
+                }
+                _.TCRUD.setCellInlineEditiong(theCell, false);
+            });
         }
     };
 
@@ -1837,22 +1853,29 @@ var tableCreater = {};
                     if (_.UO(bindingData.beforeShowEditor).call(attachData.viewModel, action, modalContent, copiedItem) === false) return;
                 }
 
-                $(crudModalResult.root).on('hidden', function () {
+                $(crudModalResult.root).on('hidden.bs.modal', function () {
+                    function finishFunc() {
+                        $(crudModalResult.root).remove();
+                    }
                     if (_.TCRUD.modalResult(crudModalResult.root)) {
                         onOkCallback(attachData, item, copiedItem, editMode);
 
                         if (_.UO(bindingData.saveImmediately)) {
-                            _.TCRUD.saveAllData(attachData);
+                            _.TCRUD.saveAllData(attachData).then(function () {
+                                finishFunc();
+                            });
                         }
+                    } else {
+                        finishFunc();
                     }
-                    $(crudModalResult.root).remove();
                 });
                 $(crudModalResult.root).modal({ backdrop: 'static' });
+                $(crudModalResult.root).modal('show');
                 //it is strange that when the modal is shown, the shown event is not tirggered until user click any input or move onto a button
                 //but in the method prepareCRUDModal we registered shown event for some special process
                 //so manually trigger shown event
                 setTimeout(function () {
-                    $(crudModalResult.root).trigger("shown");
+                    $(crudModalResult.root).trigger("shown.bs.modal");
                 }, 500);
             } else {
                 onOkCallback(attachData, item, copiedItem, editMode);
@@ -2021,13 +2044,37 @@ var tableCreater = {};
         },
 
         saveAllData: function (attachData) {
+            var deferred = $.Deferred();
+            var promise = deferred;
             var bindingData = attachData.bindingData;
-            if (bindingData.dataItemVerify && !bindingData.dataItemVerify.call(attachData.viewModel)) {
-                return;
+
+            function continueFunc() {
+                if (bindingData.saveFunc) {
+                    return (_.UO(bindingData.saveFunc)).call(attachData.viewModel);
+                }
+                return undefined;
             }
-            if (bindingData.saveFunc) {
-                (_.UO(bindingData.saveFunc)).call(attachData.viewModel);
+
+            var verifyResult = undefined;
+            if (bindingData.dataItemVerify) {
+                verifyResult = bindingData.dataItemVerify.call(attachData.viewModel);
             }
+
+            if (typeof (verifyResult) === "boolean" && (!verifyResult)) {
+                return deferred.resolve();
+            } else if (verifyResult.then) { //JQ Promise
+                promise = verifyResult.then(function (result) {
+                    if (result) {
+                        return continueFunc();
+                    }
+                });
+            } else {
+                promise = promise.then(function () {
+                    return continueFunc();
+                });
+                deferred.resolve();
+            }
+            return promise;
         }
     };
 
@@ -2281,11 +2328,27 @@ tableCreater = $.extend(tableCreater, {
         });
         //ok button
         okBtn.on("click", function () {
-            if (attachedData.bindingData.dataItemVerify && (!attachedData.bindingData.dataItemVerify.call(attachedData.viewModel, targetDataItem, action, modalContent, modalRoot))) {
-                return;
+            var verifyResult = undefined;
+
+            function finishFunc() {
+                ko.bindingHandlers.tableCRUD.modalResult(modalRoot, true);
+                modalRoot.modal('hide');
             }
-            ko.bindingHandlers.tableCRUD.modalResult(modalRoot, true);
-            modalRoot.modal('hide');
+
+            if (attachedData.bindingData.dataItemVerify) {
+                verifyResult = attachedData.bindingData.dataItemVerify.call(attachedData.viewModel, targetDataItem, action, modalContent, modalRoot);
+            }
+            if (typeof (verifyResult) === "boolean" && !verifyResult) {
+                return;
+            } else if (verifyResult.then) { //JQ Promise
+                verifyResult.then(function (result) {
+                    if (result) {
+                        finishFunc();
+                    }
+                });
+            } else {
+                finishFunc();
+            }
         });
 
         if (action === ko.bindingHandlers.tableCRUD.crudActionTypes.add || action === ko.bindingHandlers.tableCRUD.crudActionTypes.change) {
@@ -2301,7 +2364,7 @@ tableCreater = $.extend(tableCreater, {
             //but this cause that, if there are too many ediotrs, the height of the .modal-body is too long, then exceed max-height
             //then there is no scroll bar, and the content will move outside the range of .modal-body
             //so we add code to check, and if so, then don't change
-            modalRoot.on('shown', function () {
+            modalRoot.on('shown.bs.modal', function () {
                 var modal_body_css = "." + tableCreater.defaultModalEditorContainerBodyClass;
                 $(this).find("input,button").blur();
                 $(this).find(modal_body_css + " :input").first().focus().select();
@@ -2325,7 +2388,7 @@ tableCreater = $.extend(tableCreater, {
     },
 
     createCRUDModal: function (modalContent, attachedData, targetDataItem, action) {
-        var root = $("<div>").addClass("modal hide fade in").attr("aria-hidden", true).hide();
+        var root = $("<div>").addClass("modal fade").attr("aria-hidden", true).modal('hide');
         var content = $('<div class="modal-dialog"><div class="modal-content"></div></div>');
         root.append(content);
         content = content.children("div");
@@ -2701,6 +2764,9 @@ var tableHelper = {
     },
     //messageBox: undefined //function(text, title, buttons, closedCallback)
     convertToPixelValue: function (valueWithUnit) {
+        if (valueWithUnit == "none") {
+            return NaN;
+        }
         if (valueWithUnit === parseFloat(valueWithUnit)) {
             return parseFloat(valueWithUnit);
         }

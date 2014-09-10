@@ -49,7 +49,9 @@ data-bind = "tableCRUD: {
     addEditorSelector/delEditorSelector/changeEditorSelector: indicate which will be shown as modal when create a new item, please note, only the editor it content should be speficy, the tableCRUD will create OK and cancel button automatilly
     newItem: function(), a function will create a new data item
     saveFunc: ** the function will be called when user click save button, it should check all items status and save all changed items
-    dataItemVerify: function(dataItem, action, editorContent, editorModalDialog, [dataItemProperty]):boolean, 
+    dataItemVerify: function(dataItem, action, editorContent, editorModalDialog, [dataItemProperty]):boolean or JQuery Promise, 
+                    if return boolean, then tableCRUD binding will check it and apply the changes (return true or undefined) or cancel the changes (return false)
+                    if return Promise, then will user Promise.then((boolean)=>{}), in the then, it will check the reuslt and apply the changes (return true or undefined) or cancel the changes (return false)
                     the first param is the data item that currently editing
                     the second param is the current edit action (ko.bindingHandlers.tableCRUD.crudActionTypes.add/change/delete)
                     the third param is the jquery object for the editor content html element
