@@ -2112,7 +2112,7 @@ var tableCreater = {};
             }
             var currentPageIndex = _.UO(bindData.currentPageIndex);
             var from = onePageItemsCount * currentPageIndex + 1;
-            if (from < 0) {
+            if (from < 0 || totalCount <= 0) {
                 from = 0;
             }
             var to = from + onePageItemsCount - 1;
