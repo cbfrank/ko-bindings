@@ -226,7 +226,8 @@ data-bind="tablePaging:{
 
 the page element has the following attachdata
 {
-    bindingData: *** //the current binding data (not ko bindingContext),   
+    bindingData: *** //the current binding data (not ko bindingContext),
+    viewModel: the view mode bound to this element
 }
 
 data-bind= tableSelectedItems :// items (array or observableArray)in the source, which is bound for the current selected rows

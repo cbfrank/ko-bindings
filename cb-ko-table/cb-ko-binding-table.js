@@ -2096,13 +2096,16 @@ var tableCreater = {};
                 bindData.pageNavigateContainerSelector = "[name=" + _.TP.defaultContainerNames.navContainer + "]";
                 element.append(tableCreater.createPagingNavigatePanel(_.TP.defaultContainerNames.navContainer));
             }
-            _.pagingAttachData(element).bindingData = bindData;
+            var attachData = _.pagingAttachData(element);
+            attachData.bindingData = bindData;
+            attachData.viewModel = viewModel;
         },
         update: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
             element = $(element);
             var bindData = valueAccessor();
             var attachData = _.pagingAttachData(element);
             $.extend(attachData.bindingData, bindData);
+            $.extend(attachData.viewModel, viewModel);
             bindData = attachData.bindingData;
             var totalCount = _.UO(bindData.totalCount);
             var onePageItemsCount = _.UO(bindData.onePageItemsCount);
@@ -2688,7 +2691,7 @@ tableCreater = $.extend(tableCreater, {
     },
 
     createPagingNavigateIndex: function (pageIndex, currentPageIndex, navFunction) {
-        var li = $("<li><a>" + (pageIndex + 1) + "</a></li>");
+        var li = $("<li><a href='#' >" + (pageIndex + 1) + "</a></li>");
         var a = li.children("a");
         if (currentPageIndex === pageIndex) {
             li.addClass(tableCreater.currentNavigateIndexClass);
@@ -2730,7 +2733,7 @@ tableCreater = $.extend(tableCreater, {
     createPagingNavigateContent: function (currentPageIndex, totalPagesCount, itemsCountOnePage, maxIndexCount, attachData) {
         var ul = $("<ul class='dataTables_paginate paging_bootstrap pagination' />");
         var navFunction = function (index) {
-            (ko.utils.unwrapObservable(attachData.bindingData.fetchItems))(index);
+            ko.unwrap(attachData.bindingData.fetchItems).call(ko.unwrap(attachData.viewModel), index);
         };
         ul.append(tableCreater.createFirstPageIndex(currentPageIndex, navFunction));
         var firstIndexPage = currentPageIndex - parseInt(maxIndexCount / 2, 10);
