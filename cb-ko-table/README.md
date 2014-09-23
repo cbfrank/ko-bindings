@@ -49,13 +49,14 @@ data-bind = "tableCRUD: {
     addEditorSelector/delEditorSelector/changeEditorSelector: indicate which will be shown as modal when create a new item, please note, only the editor it content should be speficy, the tableCRUD will create OK and cancel button automatilly
     newItem: function(), a function will create a new data item
     saveFunc: ** the function will be called when user click save button, it should check all items status and save all changed items
-    dataItemVerify: function(dataItem, action, editorContent, editorModalDialog, [dataItemProperty]):boolean or JQuery Promise, 
+    dataItemVerify: function(dataItem, olddataItem, action, editorContent, editorModalDialog, [dataItemProperty]):boolean or JQuery Promise, 
                     if return boolean, then tableCRUD binding will check it and apply the changes (return true or undefined) or cancel the changes (return false)
                     if return Promise, then will user Promise.then((boolean)=>{}), in the then, it will check the reuslt and apply the changes (return true or undefined) or cancel the changes (return false)
                     the first param is the data item that currently editing
-                    the second param is the current edit action (ko.bindingHandlers.tableCRUD.crudActionTypes.add/change/delete)
-                    the third param is the jquery object for the editor content html element
-                    the fourth param is the jquery modal dialog html element
+                    the second param is the data item that before changed, actually, the first param is the copy of second, and second is the actual item in the data soure, and first is the the temp item that currently edited, and if success, it will copy back to the second param
+                    the third param is the current edit action (ko.bindingHandlers.tableCRUD.crudActionTypes.add/change/delete)
+                    the fourth param is the jquery object for the editor content html element
+                    the fifth param is the jquery modal dialog html element
                     the result is the verify result, it should be a boolean, if the result is false, the edite(add/change/del) will be cancel
                     the property of the dataItem that is editing, only when inline edit mode, and there is a attribute of dataItemProperty on the td in a tr template or th in the tr of thead
                     if dataItem and action is undefined, then it means should verify all the items
@@ -78,7 +79,7 @@ data-bind = "tableCRUD: {
                 //modalContent: is the editors container html node
                 //targetDataItem: is the dataitem currently being edited, it is a copy of the original item
                 //return false will stop the edit to continue, otherwise the edit action will continue
-    prepareCRUDModal: function (action, modalRoot, modalContent, okBtn, cancelBtn, targetDataItem)
+    prepareCRUDModal: function (action, modalRoot, modalContent, okBtn, cancelBtn, targetDataItem, originalDataItem)
                 //this function is just called after the  tableCreater.prepareCRUDModal is called
                 //at this time, the crud modal is created and almost propared, it can be shown now, but we give a second chance to make some minior or any changes to the modal ui
                 //use this if you have any special requires to the UI (please note, this function should be used for UI changeds at most time)
@@ -87,7 +88,11 @@ data-bind = "tableCRUD: {
                 //modalRoot: the jquery object of the root element of the Modal
                 //modalContent: the jquery object of the content element of the Modal (of course it is the children of the modalRoot and if addEditorSelector/delEditorSelector/changeEditorSelector provided, it is the clone of the element jquery object selected by these selector)
                 //okBtn,cancelBtn
-                //targetDataItem: although it has same properties values as the current edit data item, but actual it is the cpoied of the data item, but this targetDataItem is the actual one that is bound to Modal
+                //targetDataItem: although it has same properties values as the current edit data item, 
+                //                but actual it is the cpoied of the data item, 
+                //                but this targetDataItem is the actual one that is bound to Modal
+                //originalDataItem: has same properties as targetDataItem, but it is the actual item that saved in items source, 
+                //                targetDataItem is a copy of it
     addNewItemToEnd: bool, indicate if the new item should be added at the end of the table or at the top of the table, default is undefined, which has same result as of true
                 //means add the end of the table
     onDataChanged:(changeAction: string, item: TItem)=> void, will be called every time when user add/chenge/delete an item. changeAction is one of ko.bindingHandlers.tableCRUD.crudActionTypes

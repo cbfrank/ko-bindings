@@ -481,7 +481,7 @@ var tableCreater = {};
                     dataItemVerifyPass = false;
                     deferred.resolve();
                 } else if (bindingData.dataItemVerify) {
-                    var verifyResult = bindingData.dataItemVerify.call(attachData.viewModel, currentEditDataItem, editorAttachData.editAction, theEditor, undefined, propName);
+                    var verifyResult = bindingData.dataItemVerify.call(attachData.viewModel, currentEditDataItem, item, editorAttachData.editAction, theEditor, undefined, propName);
                     if (typeof (verifyResult) === "boolean" && !verifyResult) {
                         dataItemVerifyPass = false;
                         deferred.resolve();
@@ -1844,9 +1844,9 @@ var tableCreater = {};
 
                 var childBindingContext = attachData.bindingContext.createChildContext(copiedItem);
                 ko.applyBindingsToDescendants(childBindingContext, $(crudModalResult.root)[0]);
-                tableCreater.prepareCRUDModal(action, crudModalResult.root, modalContent, crudModalResult.okBtn, crudModalResult.cancelBtn, attachData, copiedItem);
+                tableCreater.prepareCRUDModal(action, crudModalResult.root, modalContent, crudModalResult.okBtn, crudModalResult.cancelBtn, attachData, copiedItem, item);
                 if (bindingData.prepareCRUDModal) {
-                    (_.UO(bindingData.prepareCRUDModal)).call(attachData.viewMode, action, crudModalResult.root, modalContent, crudModalResult.okBtn, crudModalResult.cancelBtn, copiedItem);
+                    (_.UO(bindingData.prepareCRUDModal)).call(attachData.viewMode, action, crudModalResult.root, modalContent, crudModalResult.okBtn, crudModalResult.cancelBtn, copiedItem, item);
                 }
 
                 if (bindingData.beforeShowEditor) {
@@ -2319,7 +2319,7 @@ tableCreater = $.extend(tableCreater, {
 
     defaultModalEditorContainerBodyClass: "modal-body",
 
-    prepareCRUDModal: function (action, modalRoot, modalContent, okBtn, cancelBtn, attachedData, targetDataItem) {
+    prepareCRUDModal: function (action, modalRoot, modalContent, okBtn, cancelBtn, attachedData, targetDataItem, originalDataItem) {
         modalRoot = $(modalRoot);
         modalContent = $(modalContent);
         okBtn = $(okBtn);
@@ -2339,7 +2339,7 @@ tableCreater = $.extend(tableCreater, {
             }
 
             if (attachedData.bindingData.dataItemVerify) {
-                verifyResult = attachedData.bindingData.dataItemVerify.call(attachedData.viewModel, targetDataItem, action, modalContent, modalRoot);
+                verifyResult = attachedData.bindingData.dataItemVerify.call(attachedData.viewModel, targetDataItem, originalDataItem, action, modalContent, modalRoot);
             }
             if (typeof (verifyResult) === "boolean" && !verifyResult) {
                 return;
