@@ -2697,7 +2697,7 @@ tableCreater = $.extend(tableCreater, {
             li.addClass(tableCreater.currentNavigateIndexClass);
         }
         a.on("click", function (event) {
-            navFunction(pageIndex);
+            navFunction(pageIndex, event);
         });
         return li;
     },
@@ -2713,7 +2713,7 @@ tableCreater = $.extend(tableCreater, {
             firstPageli.addClass("disabled");
         }
         firstPageli.children("a").on('click', function (event) {
-            navFunction(0);
+            navFunction(0, event);
         });
         return firstPageli;
     },
@@ -2725,14 +2725,17 @@ tableCreater = $.extend(tableCreater, {
             lastPageLi.addClass("disabled");
         }
         lastPageLi.children("a").on('click', function (event) {
-            navFunction(totalPagesCount - 1);
+            navFunction(totalPagesCount - 1, event);
         });
         return lastPageLi;
     },
 
     createPagingNavigateContent: function (currentPageIndex, totalPagesCount, itemsCountOnePage, maxIndexCount, attachData) {
         var ul = $("<ul class='dataTables_paginate paging_bootstrap pagination' />");
-        var navFunction = function (index) {
+        var navFunction = function (index, event) {
+            if (index == currentPageIndex || index >= totalPagesCount) {
+                return;
+            }
             ko.unwrap(attachData.bindingData.fetchItems).call(ko.unwrap(attachData.viewModel), index);
         };
         ul.append(tableCreater.createFirstPageIndex(currentPageIndex, navFunction));
