@@ -49,7 +49,14 @@ data-bind = "tableCRUD: {
     addEditorSelector/delEditorSelector/changeEditorSelector: indicate which will be shown as modal when create a new item, please note, only the editor it content should be speficy, the tableCRUD will create OK and cancel button automatilly
     newItem: function(), a function will create a new data item
     saveFunc: ** the function will be called when user click save button, it should check all items status and save all changed items
-    dataItemVerify: function(dataItem, olddataItem, action, editorContent, editorModalDialog, [dataItemProperty]):boolean or JQuery Promise, 
+    dataItemVerify: function(dataItem, olddataItem, action, editorContent, editorModalDialog, [dataItemProperty]):boolean or JQuery Promise or null or undefined, 
+					for inline edit:
+						1.return true or promise with true result will make the cell finished edit and with the changed value
+						2.return false or promise with false result will make the cell finished edit and value is not changed
+						3. null or undefined or promise with undefined or null will keep the value changed but the cell is still in inline edit mode
+					for modal edit:
+						1. retune true or promise with true result will finish edit with the changed value
+						2. other value will stay in change modal
                     if return boolean, then tableCRUD binding will check it and apply the changes (return true or undefined) or cancel the changes (return false)
                     if return Promise, then will user Promise.then((boolean)=>{}), in the then, it will check the reuslt and apply the changes (return true or undefined) or cancel the changes (return false)
                     the first param is the data item that currently editing

@@ -474,62 +474,67 @@ var tableCreater = {};
 
                 var propName = tableCreater.getCellDataItemProperty(currentCell);
 
-                var dataItemVerifyPass = true;
                 var deferred = $.Deferred();
                 var promise = deferred;
                 if (esc) {
-                    dataItemVerifyPass = false;
-                    deferred.resolve();
+                    deferred.resolve(false);
                 } else if (bindingData.dataItemVerify) {
                     var verifyResult = bindingData.dataItemVerify.call(attachData.viewModel, currentEditDataItem, item, editorAttachData.editAction, theEditor, undefined, propName);
                     if (typeof (verifyResult) === "boolean" && !verifyResult) {
-                        dataItemVerifyPass = false;
-                        deferred.resolve();
+                        deferred.resolve(false);
                     }
                     else if (verifyResult.then) { //JQ promise
                         promise = verifyResult.then(function (result) {
-                            return dataItemVerifyPass = result;
+                            return result;
                         });
                     } else {
                         deferred.resolve();
                     }
                 }
-                promise.then(function () {
-                    if (typeof (editorAttachData.originalChildren) === "string") {
-                        currentCell.text(editorAttachData.originalChildren);
-                    }
-                    if (dataItemVerifyPass) {
-                        _.TCRUD.assignEditItem(attachData, currentEditDataItem, item, propName);
-                        _.TCRUD.modelStatus(item, _.TCRUD.modelStatusConsts.Changed);
-                        if (bindingData.onDataChanged) {
-                            bindingData.onDataChanged.call(attachData.viewModel, _.TCRUD.crudActionTypes.change, item);
+                else {
+                    deferred.resolve(true);
+                }
+                promise.then(function (dataItemVerifyPass) {
+                    if (dataItemVerifyPass == null || typeof (dataItemVerifyPass) == "undefined") {
+
+                    } else {
+                        if (typeof (editorAttachData.originalChildren) === "string") {
+                            currentCell.text(editorAttachData.originalChildren);
                         }
-                        if (ko.$helper && ko.$helper.browser.isIE && ko.$helper.browser.version <= 8) {
-                            setTimeout(function () {
-                                if (propName) {
-                                    if (ko.isObservable(item[propName])) {
-                                        item[propName].valueHasMutated();
-                                    }
-                                } else {
-                                    for (var p in item) {
-                                        if (ko.isObservable(item[p])) {
-                                            item[p].valueHasMutated();
+                        if (dataItemVerifyPass) {
+                            _.TCRUD.assignEditItem(attachData, currentEditDataItem, item, propName);
+                            _.TCRUD.modelStatus(item, _.TCRUD.modelStatusConsts.Changed);
+                            if (bindingData.onDataChanged) {
+                                bindingData.onDataChanged.call(attachData.viewModel, _.TCRUD.crudActionTypes.change, item);
+                            }
+                            if (ko.$helper && ko.$helper.browser.isIE && ko.$helper.browser.version <= 8) {
+                                setTimeout(function () {
+                                    if (propName) {
+                                        if (ko.isObservable(item[propName])) {
+                                            item[propName].valueHasMutated();
+                                        }
+                                    } else {
+                                        for (var p in item) {
+                                            if (ko.isObservable(item[p])) {
+                                                item[p].valueHasMutated();
+                                            }
                                         }
                                     }
-                                }
-                            }, 50);
+                                }, 50);
+                            }
+                        } else {
+                            //currentEditDataItem = item;
+                            //why we need revocer the item
+                            //in idea, it should not be changed
+                            //but unfortunatel, is will be change by unknow reason, the editor will trigger a change event with empty value and if there is a format biding, 
+                            //actually, the origianl item is changed
+                            _.TCRUD.assignEditItem(attachData, editorAttachData.copiedDateItem2, item, propName);
                         }
-                    } else {
-                        //currentEditDataItem = item;
-                        //why we need revocer the item
-                        //in idea, it should not be changed
-                        //but unfortunatel, is will be change by unknow reason, the editor will trigger a change event with empty value and if there is a format biding, 
-                        //actually, the origianl item is changed
-                        _.TCRUD.assignEditItem(attachData, editorAttachData.copiedDateItem2, item, propName);
+                        if (typeof (editorAttachData.originalChildren) !== "string" && editorAttachData.originalChildren) {
+                            editorAttachData.originalChildren.show();
+                        }
                     }
-                    if (typeof (editorAttachData.originalChildren) !== "string" && editorAttachData.originalChildren) {
-                        editorAttachData.originalChildren.show();
-                    }
+                    return dataItemVerifyPass;
                 });
                 return promise;
             }
@@ -549,14 +554,18 @@ var tableCreater = {};
             editorDiv.children().trigger("blur", _.TCRUD.triggerBlurForKOUpdate);
             _.removeDataEx(editorDiv, _.TCRUD.triggerBlurForKOUpdate);
             var eventData = {};
-            onFinishedEdit(theCell, eventData, reason === _.TCRUD.triggerEndInlineEditForESC).then(function () {
-                editorDiv.empty();
-                editorDiv.remove();
-                _.TCRUD.cellInlinEditorDiv(theCell, undefined);
-                if (eventData.afterEditorsRemoved) {
-                    eventData.afterEditorsRemoved();
+            onFinishedEdit(theCell, eventData, reason === _.TCRUD.triggerEndInlineEditForESC).then(function (dataItemVerifyPass) {
+                if (dataItemVerifyPass == null || typeof (dataItemVerifyPass) == "undefined") {
+                    editorDiv.focus();
+                } else {
+                    editorDiv.empty();
+                    editorDiv.remove();
+                    _.TCRUD.cellInlinEditorDiv(theCell, undefined);
+                    if (eventData.afterEditorsRemoved) {
+                        eventData.afterEditorsRemoved();
+                    }
+                    _.TCRUD.setCellInlineEditiong(theCell, false);
                 }
-                _.TCRUD.setCellInlineEditiong(theCell, false);
             });
         }
     };
@@ -2060,7 +2069,7 @@ var tableCreater = {};
                 verifyResult = bindingData.dataItemVerify.call(attachData.viewModel);
             }
 
-            if (typeof (verifyResult) === "boolean" && (!verifyResult)) {
+            if (typeof (verifyResult) === "undefined" || verifyResult == null || (typeof (verifyResult) === "boolean" && (!verifyResult))) {
                 return deferred.resolve();
             } else if (verifyResult.then) { //JQ Promise
                 promise = verifyResult.then(function (result) {
@@ -2341,7 +2350,7 @@ tableCreater = $.extend(tableCreater, {
             if (attachedData.bindingData.dataItemVerify) {
                 verifyResult = attachedData.bindingData.dataItemVerify.call(attachedData.viewModel, targetDataItem, originalDataItem, action, modalContent, modalRoot);
             }
-            if (typeof (verifyResult) === "boolean" && !verifyResult) {
+            if (verifyResult == null || typeof (verifyResult) == "undefined" || (typeof (verifyResult) === "boolean" && !verifyResult)) {
                 return;
             } else if (verifyResult.then) { //JQ Promise
                 verifyResult.then(function (result) {
