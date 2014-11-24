@@ -25,6 +25,7 @@
 }
 
 var tableCreater = {};
+var tableHelper = {};
 (function () {
     //helper method
     var _ = tableCreater._ = {
@@ -219,7 +220,7 @@ var tableCreater = {};
         }
     };
 
-    _.CellMouseManager = {
+    tableHelper.CellHelper = _.CellMouseManager = {
         updateSelectFocus: function (event, selectMode, allMulti, table, theCell) {
             table = $(table);
             theCell = $(theCell);
@@ -355,7 +356,7 @@ var tableCreater = {};
                         ko.applyBindings(attachData.bindingContext.createChildContext(copiedItem), editor[0]);
 
                         if (bindingData.beforeShowEditor) {
-                            if (_.UO(bindingData.beforeShowEditor).call(attachData.viewModel, editAction, editor, copiedItem) === false) {
+                            if (_.UO(bindingData.beforeShowEditor).call(attachData.viewModel, editAction, editor, copiedItem, dataItem) === false) {
                                 return false;
                             }
                         }
@@ -480,15 +481,10 @@ var tableCreater = {};
                     deferred.resolve(false);
                 } else if (bindingData.dataItemVerify) {
                     var verifyResult = bindingData.dataItemVerify.call(attachData.viewModel, currentEditDataItem, item, editorAttachData.editAction, theEditor, undefined, propName);
-                    if (typeof (verifyResult) === "boolean" && !verifyResult) {
-                        deferred.resolve(false);
-                    }
-                    else if (verifyResult.then) { //JQ promise
-                        promise = verifyResult.then(function (result) {
-                            return result;
-                        });
+                    if (verifyResult && verifyResult.then) { //JQ promise
+                        promise = verifyResult;
                     } else {
-                        deferred.resolve();
+                        deferred.resolve(verifyResult);
                     }
                 }
                 else {
@@ -1859,7 +1855,7 @@ var tableCreater = {};
                 }
 
                 if (bindingData.beforeShowEditor) {
-                    if (_.UO(bindingData.beforeShowEditor).call(attachData.viewModel, action, modalContent, copiedItem) === false) return;
+                    if (_.UO(bindingData.beforeShowEditor).call(attachData.viewModel, action, modalContent, copiedItem, item) === false) return;
                 }
 
                 $(crudModalResult.root).on('hidden.bs.modal', function () {
@@ -1870,7 +1866,7 @@ var tableCreater = {};
                         onOkCallback(attachData, item, copiedItem, editMode);
 
                         if (_.UO(bindingData.saveImmediately)) {
-                            _.TCRUD.saveAllData(attachData).then(function () {
+                            _.TCRUD.saveAllData(attachData).then(function (verifiedResult) {
                                 finishFunc();
                             });
                         }
@@ -2053,6 +2049,7 @@ var tableCreater = {};
         },
 
         saveAllData: function (attachData) {
+            //check if still have cell in edit mode
             var deferred = $.Deferred();
             var promise = deferred;
             var bindingData = attachData.bindingData;
@@ -2064,24 +2061,23 @@ var tableCreater = {};
                 return undefined;
             }
 
-            var verifyResult = undefined;
+            var verifyResult = true;
             if (bindingData.dataItemVerify) {
                 verifyResult = bindingData.dataItemVerify.call(attachData.viewModel);
             }
 
-            if (typeof (verifyResult) === "undefined" || verifyResult == null || (typeof (verifyResult) === "boolean" && (!verifyResult))) {
-                return deferred.resolve();
-            } else if (verifyResult.then) { //JQ Promise
+            if (verifyResult && verifyResult.then) { //JQ Promise
                 promise = verifyResult.then(function (result) {
                     if (result) {
                         return continueFunc();
                     }
+                    return result;
                 });
             } else {
                 promise = promise.then(function () {
                     return continueFunc();
                 });
-                deferred.resolve();
+                deferred.resolve(verifyResult);
             }
             return promise;
         }
@@ -2770,7 +2766,7 @@ tableCreater = $.extend(tableCreater, {
     }
 });
 
-var tableHelper = {
+tableHelper = $.extend(tableHelper, {
     Buttons: {
         Ok: 'OK',
         Yes: 'YES',
@@ -2792,7 +2788,7 @@ var tableHelper = {
         }
         return parseFloat(valueWithUnit);
     }
-};
+});
 
 var tableResource = {
     Ok: 'OK',
@@ -2859,4 +2855,3 @@ var tableInlineEditAfterEditorAppendInHtmlHandler = new tableInlineEditHandlerCl
 tableInlineEditAfterEditorAppendInHtmlHandler.registerHandler("", function ($currentCell, $editor, $endEdit) {
 
 });
-

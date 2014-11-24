@@ -81,10 +81,12 @@ data-bind = "tableCRUD: {
               //if is inline, then when user create a new item, a new empty row is added, and user can "type"/"click" on a cell the cell of the new row will be change to the corresponding editor
               //default value is undefined
               //if it is undefined, then will use editMode value
-    beforeShowEditor: function(action, modalContent, targetDataItem) //this function will be called before the editor is shown, 
+    beforeShowEditor: function(action, modalContent, targetDataItem, originalDataItem) //this function will be called before the editor is shown, 
                 //action: ko.bindingHandlers.tableCRUD.crudActionTypes.add, ko.bindingHandlers.tableCRUD.crudActionTypes.change or ko.bindingHandlers.tableCRUD.crudActionTypes['delete']
                 //modalContent: is the editors container html node
-                //targetDataItem: is the dataitem currently being edited, it is a copy of the original item
+                //targetDataItem: is the dataitem currently being edited, it is a copy of the original item (originalDataItem)
+				//originalDataItem: is the dataitem currently intend to be edited, but the code make a copy of it and edit the copy, so user can easyly roll back the changes
+				                    so targetDataItem is the copy of the originalDataItem
                 //return false will stop the edit to continue, otherwise the edit action will continue
     prepareCRUDModal: function (action, modalRoot, modalContent, okBtn, cancelBtn, targetDataItem, originalDataItem)
                 //this function is just called after the  tableCreater.prepareCRUDModal is called

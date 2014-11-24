@@ -24,7 +24,7 @@
         (tds: JQuery, startInlineEdit: (tdBeingEdit: JQuery) => void): void;
     }
 
-    export class TableCreater {
+    interface ITableCreater {
         templatesTagName: string;
         cellTemplateAttrName: string;
         cellTemplateTagName: string;
@@ -56,9 +56,16 @@
         crudButtonsContainerClass: string;
         defaultModalEditorContainerBodyClass: string;
     }
+
+    interface ITableHelper {
+        CellHelper: {
+            beginInlinEdit(table: HTMLTableElement, theCell: HTMLTableCellElement, editAction: string): void;
+        }
+    }
 }
 
-declare var tableCreater: $CB.Ko.Binding.Table.TableCreater;
+declare var tableCreater: $CB.Ko.Binding.Table.ITableCreater;
+declare var tableHelper: $CB.Ko.Binding.Table.ITableHelper;
 
 interface KnockoutBindingHandlers {
     tableCRUD: $CB.Ko.Binding.Table.ITableCRUDBindingHandler;
