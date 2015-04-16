@@ -292,6 +292,24 @@ var tableHelper = {};
                 var dataItem = _.TB.rowDataItem(currentRow);
                 var head = $(table).children("thead");
                 var col = $(head.children("tr").first().children()[currentCell.index()]);
+                var isHeaderSimple = true; //in some case that the header has multi rows and not has same cells in each row, then the header is not simple
+                //check if header is simple
+                (function () {
+                    var colCount = -1;
+                    for (var i = 0; i < head.children("tr").length; i++) {
+                        if (colCount == -1) {
+                            colCount = $(head.children("tr")[i]).children().length;
+                            continue;
+                        }
+                        if (colCount != $(head.children("tr")[i]).children().length) {
+                            isHeaderSimple = false;
+                            return;
+                        }
+                    }
+                })();
+                if (!isHeaderSimple) {
+                    col = $(currentRow.children()[currentCell.index()]);
+                }
 
                 if (!editAction) {
                     editAction = _.TCRUD.convertModelStatusToActionType(_.TCRUD.modelStatus(dataItem));
