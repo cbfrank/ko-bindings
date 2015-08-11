@@ -1640,7 +1640,8 @@ var tableHelper = {};
             cell = $(cell);
             if (typeof (div) === "undefined") {
                 if (!_.TCRUD.isCellInlineEditing(cell)) {
-                    if (_.cellAttachData(cell).inlineEditorDiv) throw "the cell is not in inline editing, but it has a associate inline editor";
+                    //disable check, because in some case, the validation will show a modal, so the editor will lost focus and editor is removed but the edit is still wating to finish
+                    //if (_.cellAttachData(cell).inlineEditorDiv) throw "the cell is not in inline editing, but it has a associate inline editor";
                 }
                 return _.cellAttachData(cell).inlineEditorDiv;
             } else {
