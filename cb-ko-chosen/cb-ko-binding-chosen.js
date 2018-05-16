@@ -205,15 +205,14 @@ data-bind = "table: {
                         isGroup = _.CO.tryGetValueOf(element, bindingContext, viewModel, item, value.isOptionGroup, false);
                     }
                     if (isGroup) {
-                        opt = $('<optgroup label="' + _.CO.tryGetValueOf(element, bindingContext, viewModel, item, value.groupName, true) + '" />');
+                        opt = $('<optgroup />').attr("label", _.CO.tryGetValueOf(element, bindingContext, viewModel, item, value.groupName, true));
                         parentElement.append(opt);
                         createOptions(opt, _.CO.tryGetValueOf(element, bindingContext, viewModel, item, value.groupItems, true));
                     } else {
                         var displayValue = _.CO.tryGetValueOf(element, bindingContext, viewModel, item, displayProp, true);
+                        opt = $('<option></option>').attr("value", optionNo).text(displayValue);
                         if (inArray(selectedValueArray, selectedValueItemProp, _.CO.tryGetValueOf(element, bindingContext, viewModel, item, valuePropertyForMatch, true))) {
-                            opt = $('<option selected="selected" value="' + optionNo + '">' + displayValue + '</option>');
-                        } else {
-                            opt = $('<option value="' + optionNo + '">' + displayValue + '</option>');
+                            opt.attr("selected", "selected");
                         }
                         opt.data("item", _.UO(item));
                         parentElement.append(opt);
